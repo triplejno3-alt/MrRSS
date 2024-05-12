@@ -26,7 +26,10 @@
       "mode": "exec",
       "program": "${workspaceFolder}/build/bin/MrRSS.exe",
       "preLaunchTask": "build dev",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DEV_MODE": "true"
+      }
     }
   ]
 }

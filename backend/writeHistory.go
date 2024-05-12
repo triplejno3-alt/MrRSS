@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func writeHistoryToFile(filename string, history []FeedContentFilterInfo) error {
@@ -38,7 +39,15 @@ func WriteHistory(history []FeedContentFilterInfo) error {
 		history = []FeedContentFilterInfo{}
 	}
 
-	err := writeHistoryToFile("data/history.json", history)
+	var historyFilePath string
+	if os.Getenv("DEV_MODE") == "true" {
+		historyFilePath = "data/history.json"
+	} else {
+		configDir, _ := os.UserConfigDir()
+		historyFilePath = filepath.Join(configDir, "MrRSS", "data", "history.json")
+	}
+
+	err := writeHistoryToFile(historyFilePath, history)
 	if err != nil {
 		return err
 	}

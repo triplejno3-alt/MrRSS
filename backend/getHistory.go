@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type HistoryInfo map[string]FeedContentFilterInfo
@@ -36,7 +37,14 @@ func readHistoryFromFile(filename string) (HistoryInfo, error) {
 }
 
 func GetHistory() HistoryInfo {
-	historyList, err := readHistoryFromFile("data/history.json")
+	var historyFilePath string
+	if os.Getenv("DEV_MODE") == "true" {
+		historyFilePath = "data/history.json"
+	} else {
+		configDir, _ := os.UserConfigDir()
+		historyFilePath = filepath.Join(configDir, "MrRSS", "data", "history.json")
+	}
+	historyList, err := readHistoryFromFile(historyFilePath)
 	if err != nil {
 		log.Fatalf("Unable to read history: %v", err)
 	}

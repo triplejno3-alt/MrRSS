@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type FeedInfo struct {
@@ -27,6 +28,13 @@ func readFeedFromFile(filename string) []FeedInfo {
 }
 
 func GetFeedList() []FeedInfo {
-	feedList := readFeedFromFile("data/feeds.json")
+	var feedFilePath string
+	if os.Getenv("DEV_MODE") == "true" {
+		feedFilePath = "data/feeds.json"
+	} else {
+		configDir, _ := os.UserConfigDir()
+		feedFilePath = filepath.Join(configDir, "MrRSS", "data", "feeds.json")
+	}
+	feedList := readFeedFromFile(feedFilePath)
 	return feedList
 }

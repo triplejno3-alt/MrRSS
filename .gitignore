@@ -1,4 +1,7 @@
 build/bin
+*.nsh
+build/windows/installer/tmp
 node_modules
 frontend/dist
 data
+design
