@@ -19,6 +19,7 @@ import (
 	"MrRSS/internal/feed"
 	"MrRSS/internal/handlers"
 	"MrRSS/internal/translation"
+	"MrRSS/internal/utils"
 )
 
 //go:embed frontend/dist/*
@@ -38,15 +39,31 @@ func (h *CombinedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	f, _ := os.OpenFile("debug.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// Get proper paths for data files
+	logPath, err := utils.GetLogPath()
+	if err != nil {
+		log.Printf("Warning: Could not get log path: %v. Using current directory.", err)
+		logPath = "debug.log"
+	}
+	
+	f, _ := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	defer f.Close()
 	log.SetOutput(f)
 
 	log.Println("Starting application...")
+	log.Printf("Log file: %s", logPath)
+
+	// Get database path
+	dbPath, err := utils.GetDBPath()
+	if err != nil {
+		log.Printf("Error getting database path: %v", err)
+		log.Fatal(err)
+	}
+	log.Printf("Database path: %s", dbPath)
 
 	// Initialize database
 	log.Println("Initializing Database...")
-	db, err := database.NewDB("rss.db")
+	db, err := database.NewDB(dbPath)
 	if err != nil {
 		log.Printf("Error initializing database: %v", err)
 		log.Fatal(err)
@@ -81,6 +98,8 @@ func main() {
 	apiMux.HandleFunc("/api/progress", h.HandleProgress)
 	apiMux.HandleFunc("/api/opml/import", h.HandleOPMLImport)
 	apiMux.HandleFunc("/api/opml/export", h.HandleOPMLExport)
+	apiMux.HandleFunc("/api/check-updates", h.HandleCheckUpdates)
+	apiMux.HandleFunc("/api/version", h.HandleVersion)
 
 	// Static Files
 	log.Println("Setting up static files...")

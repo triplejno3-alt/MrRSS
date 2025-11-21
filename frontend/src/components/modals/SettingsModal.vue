@@ -16,7 +16,23 @@ const settings = ref({
     language: store.i18n.locale.value
 });
 
+const updateInfo = ref(null);
+const checkingUpdates = ref(false);
+const appVersion = ref('1.1.0');
+
 onMounted(async () => {
+    // Fetch current version from API
+    try {
+        const versionRes = await fetch('/api/version');
+        if (versionRes.ok) {
+            const versionData = await versionRes.json();
+            appVersion.value = versionData.version;
+        }
+    } catch (e) {
+        console.error('Error fetching version:', e);
+    }
+
+    // Fetch settings
     try {
         const res = await fetch('/api/settings');
         const data = await res.json();
@@ -197,6 +213,34 @@ async function cleanupDatabase() {
     } catch (e) {
         console.error(e);
         window.showToast('Error cleaning up database', 'error');
+    }
+}
+
+async function checkForUpdates() {
+    checkingUpdates.value = true;
+    updateInfo.value = null;
+    
+    try {
+        const res = await fetch('/api/check-updates');
+        if (res.ok) {
+            const data = await res.json();
+            updateInfo.value = data;
+            
+            if (data.error) {
+                window.showToast(store.i18n.t('errorCheckingUpdates'), 'error');
+            } else if (data.has_update) {
+                window.showToast(store.i18n.t('updateAvailable'), 'info');
+            } else {
+                window.showToast(store.i18n.t('upToDate'), 'success');
+            }
+        } else {
+            window.showToast(store.i18n.t('errorCheckingUpdates'), 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        window.showToast(store.i18n.t('errorCheckingUpdates'), 'error');
+    } finally {
+        checkingUpdates.value = false;
     }
 }
 
@@ -396,7 +440,41 @@ async function cleanupDatabase() {
                     <img src="/assets/logo.svg" alt="Logo" class="h-16 w-auto mb-4 mx-auto">
                     <h3 class="text-xl font-bold mb-2">{{ store.i18n.t('appName') }}</h3>
                     <p class="text-text-secondary">{{ store.i18n.t('aboutApp') }}</p>
-                    <p class="text-text-secondary text-sm mt-2">{{ store.i18n.t('version') }} 1.1.0</p>
+                    <p class="text-text-secondary text-sm mt-2">{{ store.i18n.t('version') }} {{ appVersion }}</p>
+                    
+                    <div class="mt-6 mb-6 flex justify-center">
+                        <button @click="checkForUpdates" :disabled="checkingUpdates" class="btn-secondary justify-center">
+                            <i class="ph ph-arrows-clockwise" :class="{'animate-spin': checkingUpdates}"></i>
+                            {{ checkingUpdates ? store.i18n.t('checking') : store.i18n.t('checkForUpdates') }}
+                        </button>
+                    </div>
+
+                    <div v-if="updateInfo && !updateInfo.error" class="mt-4 mx-auto max-w-md text-left bg-bg-secondary p-4 rounded-lg border border-border">
+                        <div class="flex items-start gap-3 mb-3">
+                            <i v-if="updateInfo.has_update" class="ph ph-arrow-circle-up text-2xl text-green-500 mt-0.5"></i>
+                            <i v-else class="ph ph-check-circle text-2xl text-accent mt-0.5"></i>
+                            <div class="flex-1">
+                                <h4 class="font-semibold mb-1">
+                                    {{ updateInfo.has_update ? store.i18n.t('updateAvailable') : store.i18n.t('upToDate') }}
+                                </h4>
+                                <div class="text-sm text-text-secondary space-y-1">
+                                    <div>{{ store.i18n.t('currentVersion') }}: {{ updateInfo.current_version }}</div>
+                                    <div v-if="updateInfo.has_update">{{ store.i18n.t('latestVersion') }}: {{ updateInfo.latest_version }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="updateInfo.has_update" class="mt-3">
+                            <a :href="updateInfo.release_url" target="_blank" class="btn-primary inline-flex items-center gap-2 justify-center w-full">
+                                <i class="ph ph-download"></i>
+                                {{ store.i18n.t('downloadUpdate') }}
+                            </a>
+                            <div v-if="updateInfo.release_notes" class="mt-3 text-xs">
+                                <div class="font-semibold mb-1">{{ store.i18n.t('releaseNotes') }}:</div>
+                                <div class="text-text-secondary whitespace-pre-line max-h-32 overflow-y-auto">{{ updateInfo.release_notes }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mt-6">
                         <a href="https://github.com/WCY-dt/MrRSS" target="_blank" class="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors text-sm font-medium">
                             <i class="ph ph-github-logo text-xl"></i>
@@ -457,5 +535,12 @@ async function cleanupDatabase() {
 }
 .setting-item {
     @apply flex items-start justify-between gap-4 p-3 rounded-lg bg-bg-secondary border border-border;
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 </style>

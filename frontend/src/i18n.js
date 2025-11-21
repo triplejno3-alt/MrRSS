@@ -83,6 +83,15 @@ export const translations = {
         aboutApp: 'A simple, modern RSS reader.',
         version: 'Version',
         viewOnGitHub: 'View on GitHub',
+        checkForUpdates: 'Check for Updates',
+        checking: 'Checking...',
+        upToDate: 'You are using the latest version',
+        updateAvailable: 'Update available',
+        currentVersion: 'Current version',
+        latestVersion: 'Latest version',
+        downloadUpdate: 'Download Update',
+        releaseNotes: 'Release Notes',
+        errorCheckingUpdates: 'Error checking for updates',
         
         // Modals
         addNewFeed: 'Add New Feed',
@@ -216,6 +225,15 @@ export const translations = {
         aboutApp: '一个简洁、现代的 RSS 阅读器。',
         version: '版本',
         viewOnGitHub: '在 GitHub 上查看',
+        checkForUpdates: '检查更新',
+        checking: '检查中...',
+        upToDate: '您正在使用最新版本',
+        updateAvailable: '有可用更新',
+        currentVersion: '当前版本',
+        latestVersion: '最新版本',
+        downloadUpdate: '下载更新',
+        releaseNotes: '发行说明',
+        errorCheckingUpdates: '检查更新时出错',
         
         // Modals
         addNewFeed: '添加新订阅',

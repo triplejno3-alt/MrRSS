@@ -16,6 +16,7 @@ import (
 	"MrRSS/internal/feed"
 	"MrRSS/internal/opml"
 	"MrRSS/internal/translation"
+	"MrRSS/internal/version"
 )
 
 type Handler struct {
@@ -385,5 +386,110 @@ func (h *Handler) HandleTranslateArticle(w http.ResponseWriter, r *http.Request)
 	
 	json.NewEncoder(w).Encode(map[string]string{
 		"translated_title": translatedTitle,
+	})
+}
+
+// HandleCheckUpdates checks for the latest version on GitHub
+func (h *Handler) HandleCheckUpdates(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	currentVersion := version.Version
+	const githubAPI = "https://api.github.com/repos/WCY-dt/MrRSS/releases/latest"
+
+	resp, err := http.Get(githubAPI)
+	if err != nil {
+		log.Printf("Error checking for updates: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"current_version": currentVersion,
+			"error":           "Failed to check for updates",
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("GitHub API returned status: %d", resp.StatusCode)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"current_version": currentVersion,
+			"error":           "Failed to fetch latest release",
+		})
+		return
+	}
+
+	var release struct {
+		TagName    string `json:"tag_name"`
+		Name       string `json:"name"`
+		HTMLURL    string `json:"html_url"`
+		Body       string `json:"body"`
+		PublishedAt string `json:"published_at"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		log.Printf("Error decoding release info: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"current_version": currentVersion,
+			"error":           "Failed to parse release information",
+		})
+		return
+	}
+
+	// Remove 'v' prefix if present for comparison
+	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	hasUpdate := compareVersions(latestVersion, currentVersion) > 0
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"current_version": currentVersion,
+		"latest_version":  latestVersion,
+		"latest_tag":      release.TagName,
+		"release_name":    release.Name,
+		"release_url":     release.HTMLURL,
+		"release_notes":   release.Body,
+		"published_at":    release.PublishedAt,
+		"has_update":      hasUpdate,
+	})
+}
+
+// compareVersions compares two semantic versions (e.g., "1.1.0" vs "1.0.0")
+// Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+func compareVersions(v1, v2 string) int {
+	parts1 := strings.Split(v1, ".")
+	parts2 := strings.Split(v2, ".")
+
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		var p1, p2 int
+		if i < len(parts1) {
+			p1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			p2, _ = strconv.Atoi(parts2[i])
+		}
+
+		if p1 > p2 {
+			return 1
+		} else if p1 < p2 {
+			return -1
+		}
+	}
+
+	return 0
+}
+
+// HandleVersion returns the current application version
+func (h *Handler) HandleVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"version": version.Version,
 	})
 }
