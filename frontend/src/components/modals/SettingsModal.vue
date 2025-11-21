@@ -287,7 +287,7 @@ async function cleanupDatabase() {
                             </label>
                         </div>
 
-                        <div class="border border-border rounded-lg bg-bg-secondary flex-1 overflow-y-auto min-h-[250px]">
+                        <div class="border border-border rounded-lg bg-bg-secondary flex-1 overflow-y-auto min-h-[300px]">
                             <div v-for="feed in store.feeds" :key="feed.id" class="flex items-center p-3 border-b border-border last:border-0 bg-bg-primary hover:bg-bg-secondary">
                                 <input type="checkbox" :value="feed.id" v-model="selectedFeeds" class="mr-3 rounded border-border">
                                 <div class="truncate flex-1 mr-2">
