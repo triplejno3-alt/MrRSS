@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { store } from '../../store.js';
 
 const props = defineProps({
     feed: { type: Object, required: true }
@@ -40,14 +41,14 @@ async function save() {
         
         if (res.ok) {
             emit('updated');
-            window.showToast('Feed updated successfully', 'success');
+            window.showToast(store.i18n.t('feedUpdatedSuccess'), 'success');
             close();
         } else {
-            window.showToast('Error updating feed', 'error');
+            window.showToast(store.i18n.t('errorUpdatingFeed'), 'error');
         }
     } catch (e) {
         console.error(e);
-        window.showToast('Error updating feed', 'error');
+        window.showToast(store.i18n.t('errorUpdatingFeed'), 'error');
     } finally {
         isSubmitting.value = false;
     }
@@ -58,26 +59,26 @@ async function save() {
     <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-bg-primary w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-fade-in">
             <div class="p-5 border-b border-border flex justify-between items-center">
-                <h3 class="text-lg font-semibold m-0">Edit Feed</h3>
+                <h3 class="text-lg font-semibold m-0">{{ store.i18n.t('editFeed') }}</h3>
                 <span @click="close" class="text-2xl cursor-pointer text-text-secondary hover:text-text-primary">&times;</span>
             </div>
             <div class="p-6">
                 <div class="mb-4">
-                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">Title</label>
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('title') }}</label>
                     <input v-model="title" type="text" class="input-field">
                 </div>
                 <div class="mb-4">
-                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">RSS URL</label>
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('rssUrl') }}</label>
                     <input v-model="url" type="text" class="input-field">
                 </div>
                 <div class="mb-4">
-                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">Category</label>
-                    <input v-model="category" type="text" placeholder="e.g. Tech/News" class="input-field">
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('category') }}</label>
+                    <input v-model="category" type="text" :placeholder="store.i18n.t('categoryPlaceholder')" class="input-field">
                 </div>
             </div>
             <div class="p-5 border-t border-border bg-bg-secondary text-right">
                 <button @click="save" :disabled="isSubmitting" class="btn-primary">
-                    {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+                    {{ isSubmitting ? store.i18n.t('saving') : store.i18n.t('saveChanges') }}
                 </button>
             </div>
         </div>

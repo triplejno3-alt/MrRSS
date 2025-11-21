@@ -201,14 +201,19 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed models.Feed) {
 	log.Printf("Updated feed: %s", feed.Title)
 }
 
-func (f *Fetcher) AddSubscription(url string, category string) error {
+func (f *Fetcher) AddSubscription(url string, category string, customTitle string) error {
 	parsedFeed, err := f.fp.ParseURL(url)
 	if err != nil {
 		return err
 	}
 
+	title := parsedFeed.Title
+	if customTitle != "" {
+		title = customTitle
+	}
+
 	feed := &models.Feed{
-		Title:       parsedFeed.Title,
+		Title:       title,
 		URL:         url,
 		Description: parsedFeed.Description,
 		Category:    category,

@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from 'vue';
+import { store } from '../../store.js';
 
 const isOpen = ref(false);
+const title = ref('');
 const url = ref('');
 const category = ref('');
 const isSubmitting = ref(false);
@@ -20,21 +22,26 @@ async function addFeed() {
         const res = await fetch('/api/feeds/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: url.value, category: category.value })
+            body: JSON.stringify({ 
+                url: url.value, 
+                category: category.value,
+                title: title.value
+            })
         });
         
         if (res.ok) {
             emit('added');
+            title.value = '';
             url.value = '';
             category.value = '';
-            window.showToast('Feed added successfully', 'success');
+            window.showToast(store.i18n.t('feedAddedSuccess'), 'success');
             close();
         } else {
-            window.showToast('Error adding feed', 'error');
+            window.showToast(store.i18n.t('errorAddingFeed'), 'error');
         }
     } catch (e) {
         console.error(e);
-        window.showToast('Error adding feed', 'error');
+        window.showToast(store.i18n.t('errorAddingFeed'), 'error');
     } finally {
         isSubmitting.value = false;
     }
@@ -45,22 +52,26 @@ async function addFeed() {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-bg-primary w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-fade-in">
             <div class="p-5 border-b border-border flex justify-between items-center">
-                <h3 class="text-lg font-semibold m-0">Add New Feed</h3>
+                <h3 class="text-lg font-semibold m-0">{{ store.i18n.t('addNewFeed') }}</h3>
                 <span @click="close" class="text-2xl cursor-pointer text-text-secondary hover:text-text-primary">&times;</span>
             </div>
             <div class="p-6">
                 <div class="mb-4">
-                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">RSS URL</label>
-                    <input v-model="url" type="text" placeholder="https://example.com/rss" class="input-field">
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('title') }} ({{ store.i18n.t('optional') }})</label>
+                    <input v-model="title" type="text" :placeholder="store.i18n.t('titlePlaceholder')" class="input-field">
                 </div>
                 <div class="mb-4">
-                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">Category (Optional)</label>
-                    <input v-model="category" type="text" placeholder="e.g. Tech/News" class="input-field">
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('rssUrl') }}</label>
+                    <input v-model="url" type="text" :placeholder="store.i18n.t('rssUrlPlaceholder')" class="input-field">
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-1.5 font-semibold text-sm text-text-secondary">{{ store.i18n.t('categoryOptional') }}</label>
+                    <input v-model="category" type="text" :placeholder="store.i18n.t('categoryPlaceholder')" class="input-field">
                 </div>
             </div>
             <div class="p-5 border-t border-border bg-bg-secondary text-right">
                 <button @click="addFeed" :disabled="isSubmitting" class="btn-primary">
-                    {{ isSubmitting ? 'Adding...' : 'Add Subscription' }}
+                    {{ isSubmitting ? store.i18n.t('adding') : store.i18n.t('addSubscription') }}
                 </button>
             </div>
         </div>

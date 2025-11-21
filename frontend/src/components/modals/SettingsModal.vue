@@ -200,16 +200,16 @@ async function cleanupDatabase() {
 
 <template>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div class="bg-bg-primary w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border border-border overflow-hidden animate-fade-in">
+        <div class="bg-bg-primary w-full max-w-4xl h-[600px] flex flex-col rounded-2xl shadow-2xl border border-border overflow-hidden animate-fade-in">
             <div class="p-5 border-b border-border flex justify-between items-center shrink-0">
-                <h3 class="text-lg font-semibold m-0">Settings</h3>
+                <h3 class="text-lg font-semibold m-0">{{ store.i18n.t('settingsTitle') }}</h3>
                 <span @click="emit('close')" class="text-2xl cursor-pointer text-text-secondary hover:text-text-primary">&times;</span>
             </div>
             
             <div class="flex border-b border-border bg-bg-secondary shrink-0 overflow-x-auto">
-                <button @click="activeTab = 'general'" :class="['tab-btn', activeTab === 'general' ? 'active' : '']">General</button>
-                <button @click="activeTab = 'feeds'" :class="['tab-btn', activeTab === 'feeds' ? 'active' : '']">Feeds</button>
-                <button @click="activeTab = 'about'" :class="['tab-btn', activeTab === 'about' ? 'active' : '']">About</button>
+                <button @click="activeTab = 'general'" :class="['tab-btn', activeTab === 'general' ? 'active' : '']">{{ store.i18n.t('general') }}</button>
+                <button @click="activeTab = 'feeds'" :class="['tab-btn', activeTab === 'feeds' ? 'active' : '']">{{ store.i18n.t('feeds') }}</button>
+                <button @click="activeTab = 'about'" :class="['tab-btn', activeTab === 'about' ? 'active' : '']">{{ store.i18n.t('about') }}</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6">
@@ -240,54 +240,54 @@ async function cleanupDatabase() {
                         <div class="setting-item">
                             <div class="flex-1">
                                 <div class="font-medium mb-1">{{ store.i18n.t('autoUpdateInterval') }}</div>
-                                <div class="text-xs text-text-secondary">How often to check for new articles (in minutes)</div>
+                                <div class="text-xs text-text-secondary">{{ store.i18n.t('autoUpdateIntervalDesc') }}</div>
                             </div>
                             <input type="number" v-model="settings.update_interval" min="1" class="input-field w-20 text-center">
                         </div>
                     </div>
 
                     <div class="setting-group">
-                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">Database</label>
+                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">{{ store.i18n.t('database') }}</label>
                         <div class="setting-item">
                             <div class="flex-1">
-                                <div class="font-medium mb-1">Auto Cleanup</div>
-                                <div class="text-xs text-text-secondary">Automatically remove old articles to save space</div>
+                                <div class="font-medium mb-1">{{ store.i18n.t('autoCleanup') }}</div>
+                                <div class="text-xs text-text-secondary">{{ store.i18n.t('autoCleanupDesc') }}</div>
                             </div>
                             <input type="checkbox" v-model="settings.auto_cleanup_enabled" class="toggle">
                         </div>
                     </div>
 
                     <div class="setting-group">
-                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">Translation</label>
+                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">{{ store.i18n.t('translation') }}</label>
                         <div class="setting-item mb-4">
                             <div class="flex-1">
-                                <div class="font-medium mb-1">Enable Translation</div>
-                                <div class="text-xs text-text-secondary">Automatically translate article titles to your preferred language</div>
+                                <div class="font-medium mb-1">{{ store.i18n.t('enableTranslation') }}</div>
+                                <div class="text-xs text-text-secondary">{{ store.i18n.t('enableTranslationDesc') }}</div>
                             </div>
                             <input type="checkbox" v-model="settings.translation_enabled" class="toggle">
                         </div>
                         
                         <div v-if="settings.translation_enabled" class="ml-4 space-y-3 border-l-2 border-border pl-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">Translation Provider</label>
+                                <label class="block text-sm font-medium mb-1">{{ store.i18n.t('translationProvider') }}</label>
                                 <select v-model="settings.translation_provider" class="input-field w-full">
                                     <option value="google">Google Translate (Free)</option>
                                     <option value="deepl">DeepL API</option>
                                 </select>
                             </div>
                             <div v-if="settings.translation_provider === 'deepl'">
-                                <label class="block text-sm font-medium mb-1">DeepL API Key</label>
-                                <input type="password" v-model="settings.deepl_api_key" placeholder="Enter your DeepL API key" class="input-field w-full">
+                                <label class="block text-sm font-medium mb-1">{{ store.i18n.t('deeplApiKey') }}</label>
+                                <input type="password" v-model="settings.deepl_api_key" :placeholder="store.i18n.t('deeplApiKeyPlaceholder')" class="input-field w-full">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Target Language</label>
+                                <label class="block text-sm font-medium mb-1">{{ store.i18n.t('targetLanguage') }}</label>
                                 <select v-model="settings.target_language" class="input-field w-full">
-                                    <option value="en">English</option>
-                                    <option value="es">Spanish</option>
-                                    <option value="fr">French</option>
-                                    <option value="de">German</option>
-                                    <option value="zh">Chinese</option>
-                                    <option value="ja">Japanese</option>
+                                    <option value="en">{{ store.i18n.t('english') }}</option>
+                                    <option value="es">{{ store.i18n.t('spanish') }}</option>
+                                    <option value="fr">{{ store.i18n.t('french') }}</option>
+                                    <option value="de">{{ store.i18n.t('german') }}</option>
+                                    <option value="zh">{{ store.i18n.t('chinese') }}</option>
+                                    <option value="ja">{{ store.i18n.t('japanese') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -296,40 +296,43 @@ async function cleanupDatabase() {
 
                 <div v-if="activeTab === 'feeds'" class="space-y-6">
                     <div class="setting-group">
-                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">Data Management</label>
+                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">{{ store.i18n.t('dataManagement') }}</label>
                         <div class="flex gap-3 mb-3">
                             <button @click="$refs.opmlInput.click()" class="btn-secondary flex-1 justify-center">
-                                <i class="ph ph-upload"></i> Import OPML
+                                <i class="ph ph-upload"></i> {{ store.i18n.t('importOPML') }}
                             </button>
                             <input type="file" ref="opmlInput" class="hidden" @change="importOPML">
                             <button @click="exportOPML" class="btn-secondary flex-1 justify-center">
-                                <i class="ph ph-download"></i> Export OPML
+                                <i class="ph ph-download"></i> {{ store.i18n.t('exportOPML') }}
                             </button>
                         </div>
                         <div class="flex gap-3">
                             <button @click="cleanupDatabase" class="btn-danger flex-1 justify-center">
-                                <i class="ph ph-broom"></i> Clean Database
+                                <i class="ph ph-broom"></i> {{ store.i18n.t('cleanDatabase') }}
                             </button>
                         </div>
                         <p class="text-xs text-text-secondary mt-2">
-                            Removes all articles except read and favorited ones. Old articles are also automatically cleaned if "Auto Cleanup" is enabled in General settings.
+                            {{ store.i18n.t('cleanDatabaseDesc') }}
                         </p>
                     </div>
                     
                     <div class="setting-group">
-                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">Manage Feeds</label>
+                        <label class="block font-semibold mb-3 text-text-secondary uppercase text-xs tracking-wider">{{ store.i18n.t('manageFeeds') }}</label>
                         
                         <div class="flex flex-wrap gap-2 mb-2">
+                            <button @click="$emit('close'); window.dispatchEvent(new CustomEvent('show-add-feed'))" class="btn-secondary text-sm py-1.5 px-3">
+                                <i class="ph ph-plus"></i> {{ store.i18n.t('addFeed') }}
+                            </button>
                             <button @click="batchDelete" class="btn-danger text-sm py-1.5 px-3" :disabled="selectedFeeds.length === 0">
-                                <i class="ph ph-trash"></i> Delete Selected
+                                <i class="ph ph-trash"></i> {{ store.i18n.t('deleteSelected') }}
                             </button>
                             <button @click="batchMove" class="btn-secondary text-sm py-1.5 px-3" :disabled="selectedFeeds.length === 0">
-                                <i class="ph ph-folder"></i> Move Selected
+                                <i class="ph ph-folder"></i> {{ store.i18n.t('moveSelected') }}
                             </button>
                             <div class="flex-1"></div>
                             <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
                                 <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-border">
-                                Select All
+                                {{ store.i18n.t('selectAll') }}
                             </label>
                         </div>
 
@@ -341,8 +344,8 @@ async function cleanupDatabase() {
                                     <div class="text-xs text-text-secondary truncate">{{ feed.url }}</div>
                                 </div>
                                 <div class="flex gap-1 shrink-0">
-                                    <button @click="editFeed(feed)" class="text-accent hover:bg-bg-tertiary p-1 rounded text-sm" title="Edit"><i class="ph ph-pencil"></i></button>
-                                    <button @click="deleteFeed(feed.id)" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm" title="Delete"><i class="ph ph-trash"></i></button>
+                                    <button @click="editFeed(feed)" class="text-accent hover:bg-bg-tertiary p-1 rounded text-sm" :title="store.i18n.t('edit')"><i class="ph ph-pencil"></i></button>
+                                    <button @click="deleteFeed(feed.id)" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm" :title="store.i18n.t('delete')"><i class="ph ph-trash"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -351,20 +354,20 @@ async function cleanupDatabase() {
 
                 <div v-if="activeTab === 'about'" class="text-center py-10">
                     <img src="/assets/logo.svg" alt="Logo" class="h-16 w-auto mb-4 mx-auto">
-                    <h3 class="text-xl font-bold mb-2">MrRSS</h3>
-                    <p class="text-text-secondary">A simple, modern RSS reader.</p>
-                    <p class="text-text-secondary text-sm mt-2">Version 1.0.0</p>
+                    <h3 class="text-xl font-bold mb-2">{{ store.i18n.t('appName') }}</h3>
+                    <p class="text-text-secondary">{{ store.i18n.t('aboutApp') }}</p>
+                    <p class="text-text-secondary text-sm mt-2">{{ store.i18n.t('version') }} 1.0.0</p>
                     <div class="mt-6">
                         <a href="https://github.com/WCY-dt/MrRSS" target="_blank" class="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors text-sm font-medium">
                             <i class="ph ph-github-logo text-xl"></i>
-                            View on GitHub
+                            {{ store.i18n.t('viewOnGitHub') }}
                         </a>
                     </div>
                 </div>
             </div>
 
             <div class="p-5 border-t border-border bg-bg-secondary text-right shrink-0">
-                <button @click="saveSettings" class="btn-primary">Save Settings</button>
+                <button @click="saveSettings" class="btn-primary">{{ store.i18n.t('saveSettings') }}</button>
             </div>
         </div>
     </div>
@@ -390,10 +393,10 @@ async function cleanupDatabase() {
     @apply opacity-50 cursor-not-allowed;
 }
 .btn-danger {
-    @apply bg-red-600 text-white border-none px-4 py-2 rounded-md cursor-pointer flex items-center gap-2 font-semibold hover:bg-red-700 transition-colors;
+    @apply bg-transparent border-2 border-red-500 text-red-600 px-4 py-2 rounded-md cursor-pointer flex items-center gap-2 font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors;
 }
 .btn-danger:disabled {
-    @apply opacity-50 cursor-not-allowed bg-red-600;
+    @apply opacity-50 cursor-not-allowed;
 }
 .toggle {
     @apply w-10 h-5 appearance-none bg-bg-tertiary rounded-full relative cursor-pointer border border-border transition-colors checked:bg-accent checked:border-accent;

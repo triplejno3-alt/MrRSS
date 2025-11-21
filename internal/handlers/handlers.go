@@ -93,13 +93,14 @@ func (h *Handler) HandleAddFeed(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		URL      string `json:"url"`
 		Category string `json:"category"`
+		Title    string `json:"title"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.Fetcher.AddSubscription(req.URL, req.Category); err != nil {
+	if err := h.Fetcher.AddSubscription(req.URL, req.Category, req.Title); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
