@@ -50,10 +50,20 @@ echo "Creating DMG image..."
 rm -f "${BUILD_DIR}/${DMG_NAME}"
 
 # Use hdiutil to create the DMG
-hdiutil create -volname "${APP_NAME}" \
+if ! hdiutil create -volname "${APP_NAME}" \
     -srcfolder "${DMG_DIR}" \
     -ov -format UDZO \
-    "${BUILD_DIR}/${DMG_NAME}"
+    "${BUILD_DIR}/${DMG_NAME}"; then
+    echo "Error: Failed to create DMG with hdiutil"
+    echo "This might be due to permissions or disk space issues"
+    exit 1
+fi
+
+# Verify the DMG was created
+if [ ! -f "${BUILD_DIR}/${DMG_NAME}" ]; then
+    echo "Error: DMG file was not created at ${BUILD_DIR}/${DMG_NAME}"
+    exit 1
+fi
 
 # Clean up
 rm -rf "${DMG_DIR}"
