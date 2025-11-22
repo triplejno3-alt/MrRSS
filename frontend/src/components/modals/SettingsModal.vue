@@ -19,6 +19,9 @@ const settings = ref({
 
 const updateInfo = ref(null);
 const checkingUpdates = ref(false);
+const downloadingUpdate = ref(false);
+const installingUpdate = ref(false);
+const downloadProgress = ref(0);
 const appVersion = ref('1.1.2');
 
 onMounted(async () => {
@@ -252,6 +255,64 @@ async function checkForUpdates() {
     }
 }
 
+async function downloadAndInstallUpdate() {
+    if (!updateInfo.value || !updateInfo.value.download_url) {
+        window.showToast(store.i18n.t('errorCheckingUpdates'), 'error');
+        return;
+    }
+
+    downloadingUpdate.value = true;
+    downloadProgress.value = 0;
+
+    try {
+        // Download the update
+        const downloadRes = await fetch('/api/download-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                download_url: updateInfo.value.download_url,
+                asset_name: updateInfo.value.asset_name
+            })
+        });
+
+        if (!downloadRes.ok) {
+            throw new Error('Download failed');
+        }
+
+        const downloadData = await downloadRes.json();
+        downloadingUpdate.value = false;
+        downloadProgress.value = 100;
+
+        // Show notification
+        window.showToast(store.i18n.t('downloadComplete'), 'success');
+
+        // Install the update
+        installingUpdate.value = true;
+        window.showToast(store.i18n.t('installingUpdate'), 'info');
+
+        const installRes = await fetch('/api/install-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                file_path: downloadData.file_path
+            })
+        });
+
+        if (!installRes.ok) {
+            throw new Error('Installation failed');
+        }
+
+        // Show final message
+        window.showToast(store.i18n.t('updateWillRestart'), 'info');
+
+    } catch (e) {
+        console.error(e);
+        downloadingUpdate.value = false;
+        installingUpdate.value = false;
+        window.showToast(store.i18n.t(e.message.includes('Download') ? 'downloadFailed' : 'installFailed'), 'error');
+    }
+}
+
 </script>
 
 <template>
@@ -472,6 +533,29 @@ async function checkForUpdates() {
                                 <div class="text-sm text-text-secondary space-y-1">
                                     <div>{{ store.i18n.t('currentVersion') }}: {{ updateInfo.current_version }}</div>
                                     <div v-if="updateInfo.has_update">{{ store.i18n.t('latestVersion') }}: {{ updateInfo.latest_version }}</div>
+                                </div>
+                                
+                                <!-- Download and Install Button -->
+                                <div v-if="updateInfo.has_update && updateInfo.download_url" class="mt-3">
+                                    <button 
+                                        @click="downloadAndInstallUpdate" 
+                                        :disabled="downloadingUpdate || installingUpdate"
+                                        class="btn-primary w-full justify-center">
+                                        <i v-if="downloadingUpdate" class="ph ph-circle-notch animate-spin"></i>
+                                        <i v-else-if="installingUpdate" class="ph ph-gear animate-spin"></i>
+                                        <i v-else class="ph ph-download-simple"></i>
+                                        <span v-if="downloadingUpdate">{{ store.i18n.t('downloading') }}</span>
+                                        <span v-else-if="installingUpdate">{{ store.i18n.t('installingUpdate') }}</span>
+                                        <span v-else>{{ store.i18n.t('downloadUpdate') }}</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Fallback to GitHub if no download URL -->
+                                <div v-else-if="updateInfo.has_update && !updateInfo.download_url" class="mt-3 text-xs text-text-secondary">
+                                    <p class="mb-2">No installer available for your platform. Please download manually:</p>
+                                    <a href="https://github.com/WCY-dt/MrRSS/releases/latest" target="_blank" class="text-accent hover:underline">
+                                        View on GitHub
+                                    </a>
                                 </div>
                             </div>
                         </div>

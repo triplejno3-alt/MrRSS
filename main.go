@@ -99,6 +99,8 @@ func main() {
 	apiMux.HandleFunc("/api/opml/import", h.HandleOPMLImport)
 	apiMux.HandleFunc("/api/opml/export", h.HandleOPMLExport)
 	apiMux.HandleFunc("/api/check-updates", h.HandleCheckUpdates)
+	apiMux.HandleFunc("/api/download-update", h.HandleDownloadUpdate)
+	apiMux.HandleFunc("/api/install-update", h.HandleInstallUpdate)
 	apiMux.HandleFunc("/api/version", h.HandleVersion)
 
 	// Static Files
