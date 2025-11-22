@@ -160,9 +160,10 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			log.Println("App started")
 
-			// Start background scheduler after a short delay
+			// Start background scheduler after a longer delay to allow UI to show first
 			go func() {
-				time.Sleep(2 * time.Second)
+				time.Sleep(5 * time.Second)
+				log.Println("Starting background scheduler...")
 				h.StartBackgroundScheduler(bgCtx)
 			}()
 		},
