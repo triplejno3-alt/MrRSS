@@ -1,9 +1,51 @@
 <script setup>
 import { store } from '../../../store.js';
+import { watch } from 'vue';
 
 const props = defineProps({
     settings: { type: Object, required: true }
 });
+
+// Auto-save function that saves settings immediately
+async function autoSave() {
+    try {
+        await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                update_interval: props.settings.update_interval.toString(),
+                translation_enabled: props.settings.translation_enabled.toString(),
+                target_language: props.settings.target_language,
+                translation_provider: props.settings.translation_provider,
+                deepl_api_key: props.settings.deepl_api_key,
+                auto_cleanup_enabled: props.settings.auto_cleanup_enabled.toString(),
+                max_cache_size_mb: props.settings.max_cache_size_mb.toString(),
+                max_article_age_days: props.settings.max_article_age_days.toString(),
+                language: props.settings.language,
+                theme: props.settings.theme
+            })
+        });
+        
+        // Apply settings immediately
+        store.i18n.setLocale(props.settings.language);
+        store.setTheme(props.settings.theme);
+        store.startAutoRefresh(props.settings.update_interval);
+    } catch (e) {
+        console.error('Error auto-saving settings:', e);
+    }
+}
+
+// Watch for changes to any setting and auto-save
+watch(() => props.settings.theme, autoSave);
+watch(() => props.settings.language, autoSave);
+watch(() => props.settings.update_interval, autoSave);
+watch(() => props.settings.auto_cleanup_enabled, autoSave);
+watch(() => props.settings.max_cache_size_mb, autoSave);
+watch(() => props.settings.max_article_age_days, autoSave);
+watch(() => props.settings.translation_enabled, autoSave);
+watch(() => props.settings.translation_provider, autoSave);
+watch(() => props.settings.target_language, autoSave);
+watch(() => props.settings.deepl_api_key, autoSave);
 </script>
 
 <template>
@@ -73,6 +115,36 @@ const props = defineProps({
                     </div>
                 </div>
                 <input type="checkbox" v-model="settings.auto_cleanup_enabled" class="toggle">
+            </div>
+            
+            <div v-if="settings.auto_cleanup_enabled" class="ml-4 mt-3 space-y-3 border-l-2 border-border pl-4">
+                <div class="setting-item">
+                    <div class="flex-1 flex items-start gap-3">
+                        <i class="ph ph-hard-drive text-xl text-text-secondary mt-0.5"></i>
+                        <div class="flex-1">
+                            <div class="font-medium mb-1">{{ store.i18n.t('maxCacheSize') }}</div>
+                            <div class="text-xs text-text-secondary">{{ store.i18n.t('maxCacheSizeDesc') }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" v-model="settings.max_cache_size_mb" min="1" max="1000" class="input-field w-20 text-center">
+                        <span class="text-sm text-text-secondary">MB</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex-1 flex items-start gap-3">
+                        <i class="ph ph-calendar-x text-xl text-text-secondary mt-0.5"></i>
+                        <div class="flex-1">
+                            <div class="font-medium mb-1">{{ store.i18n.t('maxArticleAge') }}</div>
+                            <div class="text-xs text-text-secondary">{{ store.i18n.t('maxArticleAgeDesc') }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" v-model="settings.max_article_age_days" min="1" max="365" class="input-field w-20 text-center">
+                        <span class="text-sm text-text-secondary">{{ store.i18n.t('days') }}</span>
+                    </div>
+                </div>
             </div>
         </div>
 
