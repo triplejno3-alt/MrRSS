@@ -9,6 +9,7 @@ const articleContent = ref(''); // Dynamically fetched content
 const isLoadingContent = ref(false); // Loading state
 const currentArticleId = ref(null); // Track which article content we've loaded
 const defaultViewMode = ref('original'); // Default view mode from settings
+const pendingRenderAction = ref(null); // Track if there's a pending render action from context menu
 
 // Watch for article changes and apply default view mode
 watch(() => store.currentArticleId, async (newId, oldId) => {
@@ -17,12 +18,24 @@ watch(() => store.currentArticleId, async (newId, oldId) => {
         articleContent.value = '';
         currentArticleId.value = null;
         
-        // Apply default view mode
-        if (defaultViewMode.value === 'rendered') {
-            showContent.value = true;
-            await fetchArticleContent();
+        // Check if there's a pending render action from context menu
+        if (pendingRenderAction.value) {
+            // Apply the explicit action instead of default
+            if (pendingRenderAction.value === 'showContent') {
+                showContent.value = true;
+                await fetchArticleContent();
+            } else if (pendingRenderAction.value === 'showOriginal') {
+                showContent.value = false;
+            }
+            pendingRenderAction.value = null; // Clear the pending action
         } else {
-            showContent.value = false;
+            // Apply default view mode
+            if (defaultViewMode.value === 'rendered') {
+                showContent.value = true;
+                await fetchArticleContent();
+            } else {
+                showContent.value = false;
+            }
         }
     }
 });
@@ -92,8 +105,10 @@ async function fetchArticleContent() {
 }
 
 // Listen for render content event from context menu
-async function handleRenderContent() {
+async function handleRenderContent(e) {
     if (!article.value) return;
+    
+    const action = e.detail?.action || 'showContent';
     
     // Mark as read when rendering content
     if (!article.value.is_read) {
@@ -101,15 +116,25 @@ async function handleRenderContent() {
         fetch(`/api/articles/read?id=${article.value.id}&read=true`, { method: 'POST' });
     }
     
-    // Check if we need to fetch content for this article
-    if (currentArticleId.value !== article.value.id) {
-        await fetchArticleContent();
+    if (action === 'showContent') {
+        // Check if we need to fetch content for this article
+        if (currentArticleId.value !== article.value.id) {
+            await fetchArticleContent();
+        }
+        showContent.value = true;
+    } else if (action === 'showOriginal') {
+        showContent.value = false;
     }
-    showContent.value = true;
+}
+
+// Listen for explicit render action from context menu (before article selection)
+function handleExplicitRenderAction(e) {
+    pendingRenderAction.value = e.detail?.action;
 }
 
 onMounted(async () => {
     window.addEventListener('render-article-content', handleRenderContent);
+    window.addEventListener('explicit-render-action', handleExplicitRenderAction);
     
     // Load default view mode from settings
     try {
@@ -123,6 +148,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('render-article-content', handleRenderContent);
+    window.removeEventListener('explicit-render-action', handleExplicitRenderAction);
 });
 </script>
 

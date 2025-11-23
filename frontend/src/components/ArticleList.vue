@@ -145,6 +145,12 @@ function handleScroll(e) {
 }
 
 function selectArticle(article) {
+    // If clicking the same article, close the detail view
+    if (store.currentArticleId === article.id) {
+        store.currentArticleId = null;
+        return;
+    }
+    
     store.currentArticleId = article.id;
     if (!article.is_read) {
         article.is_read = true;
@@ -216,9 +222,27 @@ async function handleArticleAction(action, article) {
             console.error('Error toggling hide:', e);
         }
     } else if (action === 'renderContent') {
-        // Select the article and trigger content rendering
+        // Determine the action based on default view mode
+        const renderAction = defaultViewMode.value === 'rendered' ? 'showOriginal' : 'showContent';
+        
+        // Dispatch explicit action event before selecting article
+        window.dispatchEvent(new CustomEvent('explicit-render-action', {
+            detail: { action: renderAction }
+        }));
+        
+        // Select the article
         store.currentArticleId = article.id;
-        window.dispatchEvent(new CustomEvent('render-article-content'));
+        
+        // Mark as read
+        if (!article.is_read) {
+            article.is_read = true;
+            fetch(`/api/articles/read?id=${article.id}&read=true`, { method: 'POST' });
+        }
+        
+        // Trigger the render action
+        window.dispatchEvent(new CustomEvent('render-article-content', {
+            detail: { action: renderAction }
+        }));
     } else if (action === 'openBrowser') {
         BrowserOpenURL(article.url);
     }
