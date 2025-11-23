@@ -6,6 +6,9 @@ const props = defineProps({
     settings: { type: Object, required: true }
 });
 
+// Debounce timer to prevent excessive API calls
+let saveTimeout = null;
+
 // Auto-save function that saves settings immediately
 async function autoSave() {
     try {
@@ -35,17 +38,16 @@ async function autoSave() {
     }
 }
 
-// Watch for changes to any setting and auto-save
-watch(() => props.settings.theme, autoSave);
-watch(() => props.settings.language, autoSave);
-watch(() => props.settings.update_interval, autoSave);
-watch(() => props.settings.auto_cleanup_enabled, autoSave);
-watch(() => props.settings.max_cache_size_mb, autoSave);
-watch(() => props.settings.max_article_age_days, autoSave);
-watch(() => props.settings.translation_enabled, autoSave);
-watch(() => props.settings.translation_provider, autoSave);
-watch(() => props.settings.target_language, autoSave);
-watch(() => props.settings.deepl_api_key, autoSave);
+// Debounced auto-save function
+function debouncedAutoSave() {
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
+    }
+    saveTimeout = setTimeout(autoSave, 500); // Wait 500ms after last change
+}
+
+// Watch the entire settings object for changes
+watch(() => props.settings, debouncedAutoSave, { deep: true });
 </script>
 
 <template>

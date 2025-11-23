@@ -732,10 +732,17 @@ func (h *Handler) HandleInstallUpdate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid file type for Windows", http.StatusBadRequest)
 			return
 		}
-		// Use cmd.exe to run the installer and then delete it
-		// /C executes command and terminates, /K would keep it open
-		// We use START to launch installer in background and then delete the file
-		cmd = exec.Command("cmd", "/C", "start", "/wait", cleanPath, "/S", "&&", "del", cleanPath)
+		// Launch installer and schedule cleanup in background
+		cmd = exec.Command(cleanPath, "/S")
+		// Schedule cleanup after installer starts
+		go func() {
+			time.Sleep(3 * time.Second)
+			if err := os.Remove(cleanPath); err != nil {
+				log.Printf("Failed to remove installer: %v", err)
+			} else {
+				log.Printf("Successfully removed installer: %s", cleanPath)
+			}
+		}()
 	case "linux":
 		// Make AppImage executable and run it - validate file extension
 		if !strings.HasSuffix(strings.ToLower(cleanPath), ".appimage") {
@@ -747,21 +754,31 @@ func (h *Handler) HandleInstallUpdate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to prepare installer", http.StatusInternalServerError)
 			return
 		}
-		// Launch and schedule cleanup
-		cmd = exec.Command("sh", "-c", cleanPath+" ; rm "+cleanPath)
+		cmd = exec.Command(cleanPath)
+		// Schedule cleanup after installer starts
+		go func() {
+			time.Sleep(3 * time.Second)
+			if err := os.Remove(cleanPath); err != nil {
+				log.Printf("Failed to remove installer: %v", err)
+			} else {
+				log.Printf("Successfully removed installer: %s", cleanPath)
+			}
+		}()
 	case "darwin":
 		// Open the DMG file - validate file extension
 		if !strings.HasSuffix(strings.ToLower(cleanPath), ".dmg") {
 			http.Error(w, "Invalid file type for macOS", http.StatusBadRequest)
 			return
 		}
-		// For macOS, just open the DMG and let user handle installation
-		// We'll delete the DMG file after a delay
 		cmd = exec.Command("open", cleanPath)
 		// Schedule cleanup after opening
 		go func() {
 			time.Sleep(5 * time.Second)
-			os.Remove(cleanPath)
+			if err := os.Remove(cleanPath); err != nil {
+				log.Printf("Failed to remove installer: %v", err)
+			} else {
+				log.Printf("Successfully removed installer: %s", cleanPath)
+			}
 		}()
 	default:
 		http.Error(w, "Unsupported platform", http.StatusBadRequest)
