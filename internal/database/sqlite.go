@@ -81,6 +81,8 @@ func (db *DB) Init() error {
 	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_view_mode', 'original')`)
 	
 	// Migration: Add link column to feeds table if it doesn't exist
+	// Note: SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN.
+	// Error is ignored - if column exists, the operation fails harmlessly.
 	_, _ = db.Exec(`ALTER TABLE feeds ADD COLUMN link TEXT DEFAULT ''`)
 	})
 	return err
