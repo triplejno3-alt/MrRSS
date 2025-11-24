@@ -10,6 +10,7 @@ const emit = defineEmits(['import-opml', 'export-opml', 'cleanup-database', 'add
 
 const selectedFeeds = ref([]);
 const isDiscoveringAll = ref(false);
+const discoveryProgress = ref({ current: 0, total: 0, currentFeed: '' });
 
 const isAllSelected = computed(() => {
     return store.feeds && store.feeds.length > 0 && selectedFeeds.value.length === store.feeds.length;
@@ -125,8 +126,20 @@ function getFavicon(url) {
                         :class="['btn-primary flex-1 justify-center text-sm sm:text-base', isDiscoveringAll && 'opacity-50 cursor-not-allowed']">
                     <PhCircleNotch v-if="isDiscoveringAll" :size="18" class="sm:w-5 sm:h-5 animate-spin" />
                     <PhMagnifyingGlass v-else :size="18" class="sm:w-5 sm:h-5" />
-                    {{ isDiscoveringAll ? store.i18n.t('discovering') : store.i18n.t('discoverAllFeeds') }}
+                    {{ isDiscoveringAll ? store.i18n.t('discoveringAllFeeds') : store.i18n.t('discoverAllFeeds') }}
                 </button>
+            </div>
+            <p v-if="!isDiscoveringAll" class="text-xs text-text-secondary mb-2">
+                {{ store.i18n.t('discoverAllFeedsDesc') }}
+            </p>
+            <div v-if="isDiscoveringAll" class="bg-accent/10 border border-accent/20 rounded-lg p-3 mb-2">
+                <div class="flex items-center gap-2 text-sm text-accent font-medium mb-2">
+                    <PhCircleNotch :size="16" class="animate-spin" />
+                    {{ store.i18n.t('analyzingFeed') }}...
+                </div>
+                <p class="text-xs text-text-secondary">
+                    {{ store.i18n.t('pleaseWait') }}
+                </p>
             </div>
             <div class="flex">
                 <button @click="handleCleanupDatabase" class="btn-danger flex-1 justify-center text-sm sm:text-base">
@@ -189,6 +202,12 @@ function getFavicon(url) {
 </template>
 
 <style scoped>
+.btn-primary {
+    @apply bg-accent text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md cursor-pointer flex items-center gap-1.5 sm:gap-2 font-semibold hover:bg-accent-hover transition-colors shadow-sm;
+}
+.btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
 .btn-secondary {
     @apply bg-transparent border border-border text-text-primary px-3 sm:px-4 py-1.5 sm:py-2 rounded-md cursor-pointer flex items-center gap-1.5 sm:gap-2 font-medium hover:bg-bg-tertiary transition-colors;
 }

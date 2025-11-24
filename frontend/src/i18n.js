@@ -67,6 +67,12 @@ export const translations = {
         alreadyDiscovered: 'Already discovered',
         markAsDiscovered: 'Mark as discovered',
         feeds: 'feeds',
+        preparing: 'Preparing',
+        analyzingFeed: 'Analyzing feed',
+        searchingFriendLinks: 'Searching for friend links',
+        checkingFeeds: 'Checking RSS feeds',
+        pleaseWait: 'Please wait, this may take a few minutes',
+        discoverAllFeedsDesc: 'Automatically discover new feeds from all your subscriptions that haven\'t been scanned yet',
         
         // Settings Modal
         settingsTitle: 'Settings',
@@ -287,6 +293,12 @@ export const translations = {
         alreadyDiscovered: '已发现',
         markAsDiscovered: '标记为已发现',
         feeds: '个订阅源',
+        preparing: '准备中',
+        analyzingFeed: '正在分析订阅源',
+        searchingFriendLinks: '正在搜索友链',
+        checkingFeeds: '正在检查 RSS 订阅',
+        pleaseWait: '请稍候，这可能需要几分钟时间',
+        discoverAllFeedsDesc: '自动从所有尚未扫描的订阅源中发现新的订阅',
         
         // Settings Modal
         settingsTitle: '设置',

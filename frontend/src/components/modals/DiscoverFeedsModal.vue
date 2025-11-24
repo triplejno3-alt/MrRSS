@@ -216,10 +216,10 @@ watch(() => props.show, (newShow) => {
                     </div>
                 </div>
 
-                <!-- Empty State -->
+                <!-- Initial State (should not be visible as discovery auto-starts) -->
                 <div v-else class="text-center py-16">
-                    <PhCircleNotch :size="64" class="text-text-tertiary mx-auto mb-4 opacity-30" />
-                    <p class="text-text-secondary text-lg">{{ store.i18n.t('startDiscovery') }}</p>
+                    <PhCircleNotch :size="64" class="text-accent mx-auto mb-4 animate-spin" />
+                    <p class="text-text-secondary text-lg">{{ store.i18n.t('preparing') }}...</p>
                 </div>
             </div>
 
