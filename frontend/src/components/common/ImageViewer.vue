@@ -105,13 +105,31 @@ function handleKeyDown(e: KeyboardEvent) {
 async function downloadImage() {
   try {
     const response = await fetch(props.src);
+
+    // Check if the response is successful
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const blob = await response.blob();
 
-    // Extract filename from URL or generate one
-    const urlParts = props.src.split('/');
-    let filename = urlParts[urlParts.length - 1].split('?')[0] || 'image';
+    // Extract and sanitize filename from URL
+    let filename = 'image';
+    try {
+      const url = new URL(props.src);
+      const pathname = url.pathname;
+      const pathSegments = pathname.split('/').filter((segment) => segment.length > 0);
+      if (pathSegments.length > 0) {
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        // Remove query params and sanitize filename
+        filename = lastSegment.split('?')[0].replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
+      }
+    } catch {
+      // If URL parsing fails, use default filename
+      filename = 'image';
+    }
 
-    // Ensure it has an extension
+    // Ensure it has a valid extension based on MIME type
     if (!filename.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i)) {
       const mimeType = blob.type;
       const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
@@ -129,7 +147,7 @@ async function downloadImage() {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Failed to download image:', error);
-    // Fallback: open image in new tab
+    // Fallback: open image in new tab for manual saving
     window.open(props.src, '_blank');
   }
 }
