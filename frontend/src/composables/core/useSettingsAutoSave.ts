@@ -5,6 +5,7 @@ import { ref, watch, onMounted, onUnmounted, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app';
 import type { SettingsData } from '@/types/settings';
+import { settingsDefaults } from '@/config/defaults';
 
 export function useSettingsAutoSave(settings: Ref<SettingsData>) {
   const { locale } = useI18n();
@@ -15,8 +16,8 @@ export function useSettingsAutoSave(settings: Ref<SettingsData>) {
 
   // Track previous translation settings
   const prevTranslationSettings: Ref<{ enabled: boolean; targetLang: string }> = ref({
-    enabled: false,
-    targetLang: 'zh',
+    enabled: settingsDefaults.translation_enabled,
+    targetLang: settingsDefaults.target_language,
   });
 
   /**
@@ -52,22 +53,39 @@ export function useSettingsAutoSave(settings: Ref<SettingsData>) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          update_interval: (settings.value.update_interval ?? 10).toString(),
-          translation_enabled: (settings.value.translation_enabled ?? false).toString(),
-          target_language: settings.value.target_language ?? 'zh',
-          translation_provider: settings.value.translation_provider ?? 'google',
-          deepl_api_key: settings.value.deepl_api_key ?? '',
-          auto_cleanup_enabled: (settings.value.auto_cleanup_enabled ?? false).toString(),
-          max_cache_size_mb: (settings.value.max_cache_size_mb ?? 20).toString(),
-          max_article_age_days: (settings.value.max_article_age_days ?? 30).toString(),
-          language: settings.value.language ?? 'en-US',
-          theme: settings.value.theme ?? 'auto',
-          show_hidden_articles: (settings.value.show_hidden_articles ?? false).toString(),
-          default_view_mode: settings.value.default_view_mode ?? 'original',
-          startup_on_boot: (settings.value.startup_on_boot ?? false).toString(),
-          shortcuts: settings.value.shortcuts ?? '',
-          summary_enabled: (settings.value.summary_enabled ?? false).toString(),
-          summary_length: settings.value.summary_length ?? 'medium',
+          update_interval: (
+            settings.value.update_interval ?? settingsDefaults.update_interval
+          ).toString(),
+          translation_enabled: (
+            settings.value.translation_enabled ?? settingsDefaults.translation_enabled
+          ).toString(),
+          target_language: settings.value.target_language ?? settingsDefaults.target_language,
+          translation_provider:
+            settings.value.translation_provider ?? settingsDefaults.translation_provider,
+          deepl_api_key: settings.value.deepl_api_key ?? settingsDefaults.deepl_api_key,
+          auto_cleanup_enabled: (
+            settings.value.auto_cleanup_enabled ?? settingsDefaults.auto_cleanup_enabled
+          ).toString(),
+          max_cache_size_mb: (
+            settings.value.max_cache_size_mb ?? settingsDefaults.max_cache_size_mb
+          ).toString(),
+          max_article_age_days: (
+            settings.value.max_article_age_days ?? settingsDefaults.max_article_age_days
+          ).toString(),
+          language: settings.value.language ?? settingsDefaults.language,
+          theme: settings.value.theme ?? settingsDefaults.theme,
+          show_hidden_articles: (
+            settings.value.show_hidden_articles ?? settingsDefaults.show_hidden_articles
+          ).toString(),
+          default_view_mode: settings.value.default_view_mode ?? settingsDefaults.default_view_mode,
+          startup_on_boot: (
+            settings.value.startup_on_boot ?? settingsDefaults.startup_on_boot
+          ).toString(),
+          shortcuts: settings.value.shortcuts ?? settingsDefaults.shortcuts,
+          summary_enabled: (
+            settings.value.summary_enabled ?? settingsDefaults.summary_enabled
+          ).toString(),
+          summary_length: settings.value.summary_length ?? settingsDefaults.summary_length,
         }),
       });
 

@@ -5,29 +5,30 @@ import { ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { SettingsData } from '@/types/settings';
 import type { ThemePreference } from '@/stores/app';
+import { settingsDefaults } from '@/config/defaults';
 
 export function useSettings() {
   const { locale } = useI18n();
 
   const settings: Ref<SettingsData> = ref({
-    update_interval: 10,
-    translation_enabled: false,
-    target_language: 'zh',
-    translation_provider: 'google',
-    deepl_api_key: '',
-    auto_cleanup_enabled: false,
-    max_cache_size_mb: 20,
-    max_article_age_days: 30,
-    language: locale.value,
-    theme: 'auto',
-    last_article_update: '',
-    show_hidden_articles: false,
-    default_view_mode: 'original',
-    startup_on_boot: false,
-    shortcuts: '',
-    rules: '',
-    summary_enabled: false,
-    summary_length: 'medium',
+    update_interval: settingsDefaults.update_interval,
+    translation_enabled: settingsDefaults.translation_enabled,
+    target_language: settingsDefaults.target_language,
+    translation_provider: settingsDefaults.translation_provider,
+    deepl_api_key: settingsDefaults.deepl_api_key,
+    auto_cleanup_enabled: settingsDefaults.auto_cleanup_enabled,
+    max_cache_size_mb: settingsDefaults.max_cache_size_mb,
+    max_article_age_days: settingsDefaults.max_article_age_days,
+    language: locale.value || settingsDefaults.language,
+    theme: settingsDefaults.theme,
+    last_article_update: settingsDefaults.last_article_update,
+    show_hidden_articles: settingsDefaults.show_hidden_articles,
+    default_view_mode: settingsDefaults.default_view_mode,
+    startup_on_boot: settingsDefaults.startup_on_boot,
+    shortcuts: settingsDefaults.shortcuts,
+    rules: settingsDefaults.rules,
+    summary_enabled: settingsDefaults.summary_enabled,
+    summary_length: settingsDefaults.summary_length,
   });
 
   /**
@@ -39,24 +40,25 @@ export function useSettings() {
       const data = await res.json();
 
       settings.value = {
-        update_interval: data.update_interval || 10,
+        update_interval: data.update_interval || settingsDefaults.update_interval,
         translation_enabled: data.translation_enabled === 'true',
-        target_language: data.target_language || 'zh',
-        translation_provider: data.translation_provider || 'google',
-        deepl_api_key: data.deepl_api_key || '',
+        target_language: data.target_language || settingsDefaults.target_language,
+        translation_provider: data.translation_provider || settingsDefaults.translation_provider,
+        deepl_api_key: data.deepl_api_key || settingsDefaults.deepl_api_key,
         auto_cleanup_enabled: data.auto_cleanup_enabled === 'true',
-        max_cache_size_mb: parseInt(data.max_cache_size_mb) || 20,
-        max_article_age_days: parseInt(data.max_article_age_days) || 30,
-        language: data.language || locale.value,
-        theme: data.theme || 'auto',
-        last_article_update: data.last_article_update || '',
+        max_cache_size_mb: parseInt(data.max_cache_size_mb) || settingsDefaults.max_cache_size_mb,
+        max_article_age_days:
+          parseInt(data.max_article_age_days) || settingsDefaults.max_article_age_days,
+        language: data.language || locale.value || settingsDefaults.language,
+        theme: data.theme || settingsDefaults.theme,
+        last_article_update: data.last_article_update || settingsDefaults.last_article_update,
         show_hidden_articles: data.show_hidden_articles === 'true',
-        default_view_mode: data.default_view_mode || 'original',
+        default_view_mode: data.default_view_mode || settingsDefaults.default_view_mode,
         startup_on_boot: data.startup_on_boot === 'true',
-        shortcuts: data.shortcuts || '',
-        rules: data.rules || '',
+        shortcuts: data.shortcuts || settingsDefaults.shortcuts,
+        rules: data.rules || settingsDefaults.rules,
         summary_enabled: data.summary_enabled === 'true',
-        summary_length: data.summary_length || 'medium',
+        summary_length: data.summary_length || settingsDefaults.summary_length,
       };
 
       return settings.value;

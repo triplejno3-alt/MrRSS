@@ -4,6 +4,7 @@ import { ref, watch, onMounted, computed, nextTick } from 'vue';
 import { PhArticle, PhTextAlignLeft, PhSpinnerGap, PhTranslate } from '@phosphor-icons/vue';
 import type { Article } from '@/types/models';
 import { formatDate } from '@/utils/date';
+import { settingsDefaults } from '@/config/defaults';
 
 const { t, locale } = useI18n();
 
@@ -23,20 +24,23 @@ interface Props {
 const props = defineProps<Props>();
 
 // Summary state
-const summaryEnabled = ref(false);
-const summaryLength = ref('medium');
+const summaryEnabled = ref(settingsDefaults.summary_enabled);
+const summaryLength = ref(settingsDefaults.summary_length);
 const summaryResult = ref<SummaryResult | null>(null);
 const isLoadingSummary = ref(false);
 const showSummary = ref(true);
 
 // Translation state
-const translationEnabled = ref(false);
-const targetLanguage = ref('en');
+const translationEnabled = ref(settingsDefaults.translation_enabled);
+const targetLanguage = ref(settingsDefaults.target_language);
 const translatedSummary = ref('');
 const translatedTitle = ref('');
 const isTranslatingSummary = ref(false);
 const isTranslatingTitle = ref(false);
 const isTranslatingContent = ref(false);
+
+// Track last translated article ID to prevent duplicate translations
+const lastTranslatedArticleId = ref<number | null>(null);
 
 // Computed: check if we should show bilingual title
 const showBilingualTitle = computed(() => {
@@ -53,9 +57,9 @@ async function loadSettings() {
     const res = await fetch('/api/settings');
     const data = await res.json();
     summaryEnabled.value = data.summary_enabled === 'true';
-    summaryLength.value = data.summary_length || 'medium';
+    summaryLength.value = data.summary_length || settingsDefaults.summary_length;
     translationEnabled.value = data.translation_enabled === 'true';
-    targetLanguage.value = data.target_language || 'en';
+    targetLanguage.value = data.target_language || settingsDefaults.target_language;
   } catch (e) {
     console.error('Error loading settings:', e);
   }
@@ -135,27 +139,25 @@ async function translateTitle() {
   isTranslatingTitle.value = false;
 }
 
-// Tags that contain text to translate
-const textTags = [
-  'P',
-  'H1',
-  'H2',
-  'H3',
-  'H4',
-  'H5',
-  'H6',
-  'LI',
-  'BLOCKQUOTE',
-  'TD',
-  'TH',
-  'FIGCAPTION',
-];
+// Tags that contain text to translate (only direct text blocks)
+const textTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'BLOCKQUOTE', 'FIGCAPTION'];
+
+// Get visible text content for comparison (strips HTML but keeps structure)
+function getVisibleText(el: HTMLElement): string {
+  return el.textContent?.trim() || '';
+}
 
 // Translate content paragraph by paragraph and insert translations after each original
 async function translateContentParagraphs() {
   if (!translationEnabled.value || !props.articleContent) return;
 
+  // Prevent duplicate translations for the same article
+  if (lastTranslatedArticleId.value === props.article?.id) {
+    return;
+  }
+
   isTranslatingContent.value = true;
+  lastTranslatedArticleId.value = props.article?.id || null;
 
   // Wait for content to render
   await nextTick();
@@ -167,32 +169,38 @@ async function translateContentParagraphs() {
     return;
   }
 
-  // Find all translatable elements
+  // Remove any existing translations first
+  const existingTranslations = proseContainer.querySelectorAll('.translation-text');
+  existingTranslations.forEach((el) => el.remove());
+
+  // Find all translatable elements (only top-level text elements)
   const elements = proseContainer.querySelectorAll(textTags.join(','));
 
   for (const el of elements) {
     const htmlEl = el as HTMLElement;
-    // Skip if already has translation
-    if (htmlEl.nextElementSibling?.classList.contains('translation-text')) continue;
+
     // Skip if inside a translation element
     if (htmlEl.closest('.translation-text')) continue;
 
-    // Get the text content
-    const text = htmlEl.textContent?.trim();
-    if (!text || text.length < 2) continue;
+    // Skip if already has translation sibling
+    if (htmlEl.nextElementSibling?.classList.contains('translation-text')) continue;
 
-    // Translate the text
-    const translated = await translateText(text);
+    // Get the visible text content for translation
+    const visibleText = getVisibleText(htmlEl);
+    if (!visibleText || visibleText.length < 2) continue;
+
+    // Translate the visible text
+    const translated = await translateText(visibleText);
 
     // Skip if translation is same as original or empty
-    if (!translated || translated === text) continue;
+    if (!translated || translated === visibleText) continue;
 
     // Create translation element with same tag type
     const translationEl = document.createElement(htmlEl.tagName.toLowerCase());
     translationEl.className = 'translation-text';
     translationEl.textContent = translated;
 
-    // Copy important attributes for blockquotes
+    // Copy blockquote styling
     if (htmlEl.tagName === 'BLOCKQUOTE') {
       translationEl.style.borderLeft = '4px solid var(--accent-color)';
       translationEl.style.paddingLeft = '1em';
@@ -209,23 +217,26 @@ async function translateContentParagraphs() {
 // Watch for article changes and regenerate summary + translations
 watch(
   () => props.article?.id,
-  () => {
-    summaryResult.value = null;
-    translatedSummary.value = '';
-    translatedTitle.value = '';
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      summaryResult.value = null;
+      translatedSummary.value = '';
+      translatedTitle.value = '';
+      lastTranslatedArticleId.value = null; // Reset translation tracking
 
-    if (props.article) {
-      if (summaryEnabled.value) {
-        generateSummary();
-      }
-      if (translationEnabled.value) {
-        translateTitle();
+      if (props.article) {
+        if (summaryEnabled.value) {
+          generateSummary();
+        }
+        if (translationEnabled.value) {
+          translateTitle();
+        }
       }
     }
   }
 );
 
-// Watch for content loading completion
+// Watch for content loading completion only
 watch(
   () => props.isLoadingContent,
   (isLoading, wasLoading) => {
@@ -233,19 +244,9 @@ watch(
       if (summaryEnabled.value) {
         generateSummary();
       }
-      if (translationEnabled.value) {
+      if (translationEnabled.value && lastTranslatedArticleId.value !== props.article.id) {
         nextTick(() => translateContentParagraphs());
       }
-    }
-  }
-);
-
-// Watch for articleContent changes
-watch(
-  () => props.articleContent,
-  (newContent) => {
-    if (newContent && translationEnabled.value && !isTranslatingContent.value) {
-      nextTick(() => translateContentParagraphs());
     }
   }
 );
@@ -258,7 +259,7 @@ onMounted(async () => {
     }
     if (translationEnabled.value) {
       translateTitle();
-      if (props.articleContent) {
+      if (props.articleContent && !props.isLoadingContent) {
         nextTick(() => translateContentParagraphs());
       }
     }
