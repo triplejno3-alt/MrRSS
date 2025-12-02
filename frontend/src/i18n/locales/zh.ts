@@ -159,6 +159,10 @@ const zh: TranslationMessages = {
   summaryTooShort: '文章太短，无法生成有效摘要',
   noSummaryAvailable: '摘要不可用',
   generateSummary: '生成摘要',
+  translating: '翻译中...',
+  translatingContent: '正在翻译内容...',
+  autoTranslateEnabled: '自动翻译已启用',
+  originalContent: '原文',
 
   // Languages
   english: '英语',

@@ -103,6 +103,7 @@ func main() {
 	apiMux.HandleFunc("/api/articles/favorite", h.HandleToggleFavorite)
 	apiMux.HandleFunc("/api/articles/cleanup", h.HandleCleanupArticles)
 	apiMux.HandleFunc("/api/articles/translate", h.HandleTranslateArticle)
+	apiMux.HandleFunc("/api/articles/translate-text", h.HandleTranslateText)
 	apiMux.HandleFunc("/api/articles/clear-translations", h.HandleClearTranslations)
 	apiMux.HandleFunc("/api/articles/toggle-hide", h.HandleToggleHideArticle)
 	apiMux.HandleFunc("/api/articles/content", h.HandleGetArticleContent)

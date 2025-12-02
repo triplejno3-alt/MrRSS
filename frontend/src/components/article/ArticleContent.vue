@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ref, watch, onMounted } from 'vue';
-import { PhArticle, PhTextAlignLeft, PhSpinnerGap } from '@phosphor-icons/vue';
+import { ref, watch, onMounted, computed } from 'vue';
+import { PhArticle, PhTextAlignLeft, PhSpinnerGap, PhTranslate } from '@phosphor-icons/vue';
 import type { Article } from '@/types/models';
 import { formatDate } from '@/utils/date';
 
@@ -29,16 +29,56 @@ const summaryResult = ref<SummaryResult | null>(null);
 const isLoadingSummary = ref(false);
 const showSummary = ref(true);
 
-// Load summary settings
-async function loadSummarySettings() {
+// Translation state
+const translationEnabled = ref(false);
+const targetLanguage = ref('en');
+const translatedSummary = ref('');
+const translatedTitle = ref('');
+const translatedContent = ref('');
+const isTranslatingSummary = ref(false);
+const isTranslatingTitle = ref(false);
+const isTranslatingContent = ref(false);
+
+// Computed: check if we should show bilingual content
+const showBilingualTitle = computed(() => translationEnabled.value && translatedTitle.value);
+const showBilingualContent = computed(() => translationEnabled.value && translatedContent.value);
+
+// Load summary and translation settings
+async function loadSettings() {
   try {
     const res = await fetch('/api/settings');
     const data = await res.json();
     summaryEnabled.value = data.summary_enabled === 'true';
     summaryLength.value = data.summary_length || 'medium';
+    translationEnabled.value = data.translation_enabled === 'true';
+    targetLanguage.value = data.target_language || 'en';
   } catch (e) {
-    console.error('Error loading summary settings:', e);
+    console.error('Error loading settings:', e);
   }
+}
+
+// Translate text using the API
+async function translateText(text: string): Promise<string> {
+  if (!text || !translationEnabled.value) return '';
+
+  try {
+    const res = await fetch('/api/articles/translate-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text,
+        target_language: targetLanguage.value,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.translated_text || '';
+    }
+  } catch (e) {
+    console.error('Error translating text:', e);
+  }
+  return '';
 }
 
 // Generate summary for the current article
@@ -49,6 +89,7 @@ async function generateSummary() {
 
   isLoadingSummary.value = true;
   summaryResult.value = null;
+  translatedSummary.value = '';
 
   try {
     const res = await fetch('/api/articles/summarize', {
@@ -62,6 +103,17 @@ async function generateSummary() {
 
     if (res.ok) {
       summaryResult.value = await res.json();
+
+      // Auto-translate summary if translation is enabled
+      if (
+        translationEnabled.value &&
+        summaryResult.value?.summary &&
+        !summaryResult.value.is_too_short
+      ) {
+        isTranslatingSummary.value = true;
+        translatedSummary.value = await translateText(summaryResult.value.summary);
+        isTranslatingSummary.value = false;
+      }
     }
   } catch (e) {
     console.error('Error generating summary:', e);
@@ -70,13 +122,49 @@ async function generateSummary() {
   }
 }
 
-// Watch for article changes and regenerate summary
+// Translate title
+async function translateTitle() {
+  if (!translationEnabled.value || !props.article?.title) return;
+
+  isTranslatingTitle.value = true;
+  translatedTitle.value = await translateText(props.article.title);
+  isTranslatingTitle.value = false;
+}
+
+// Translate content - strip HTML tags for translation, then display both
+async function translateContent() {
+  if (!translationEnabled.value || !props.articleContent) return;
+
+  isTranslatingContent.value = true;
+
+  // Create a temporary element to extract text from HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = props.articleContent;
+  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+
+  if (textContent.trim()) {
+    translatedContent.value = await translateText(textContent.trim());
+  }
+
+  isTranslatingContent.value = false;
+}
+
+// Watch for article changes and regenerate summary + translations
 watch(
   () => props.article?.id,
   () => {
     summaryResult.value = null;
-    if (summaryEnabled.value && props.article) {
-      generateSummary();
+    translatedSummary.value = '';
+    translatedTitle.value = '';
+    translatedContent.value = '';
+
+    if (props.article) {
+      if (summaryEnabled.value) {
+        generateSummary();
+      }
+      if (translationEnabled.value) {
+        translateTitle();
+      }
     }
   }
 );
@@ -85,16 +173,40 @@ watch(
 watch(
   () => props.isLoadingContent,
   (isLoading, wasLoading) => {
-    if (wasLoading && !isLoading && summaryEnabled.value && props.article) {
-      generateSummary();
+    if (wasLoading && !isLoading && props.article) {
+      if (summaryEnabled.value) {
+        generateSummary();
+      }
+      if (translationEnabled.value) {
+        translateContent();
+      }
+    }
+  }
+);
+
+// Watch for articleContent changes
+watch(
+  () => props.articleContent,
+  (newContent) => {
+    if (newContent && translationEnabled.value && !isTranslatingContent.value) {
+      translatedContent.value = '';
+      translateContent();
     }
   }
 );
 
 onMounted(async () => {
-  await loadSummarySettings();
-  if (summaryEnabled.value && props.article && props.articleContent) {
-    generateSummary();
+  await loadSettings();
+  if (props.article) {
+    if (summaryEnabled.value && props.articleContent) {
+      generateSummary();
+    }
+    if (translationEnabled.value) {
+      translateTitle();
+      if (props.articleContent) {
+        translateContent();
+      }
+    }
   }
 });
 </script>
@@ -102,15 +214,41 @@ onMounted(async () => {
 <template>
   <div class="flex-1 overflow-y-auto bg-bg-primary p-3 sm:p-6">
     <div class="max-w-3xl mx-auto bg-bg-primary">
-      <h1 class="text-xl sm:text-3xl font-bold mb-3 sm:mb-4 text-text-primary leading-tight">
-        {{ article.title }}
-      </h1>
+      <!-- Title Section - Bilingual when translation enabled -->
+      <div class="mb-3 sm:mb-4">
+        <!-- Translated Title (shown first if available) -->
+        <h1
+          v-if="showBilingualTitle"
+          class="text-xl sm:text-3xl font-bold text-text-primary leading-tight mb-2"
+        >
+          {{ translatedTitle }}
+        </h1>
+        <!-- Original Title -->
+        <h1
+          :class="[
+            'text-xl sm:text-3xl font-bold leading-tight',
+            showBilingualTitle ? 'text-text-secondary text-base sm:text-xl' : 'text-text-primary',
+          ]"
+        >
+          {{ article.title }}
+        </h1>
+        <!-- Translation loading indicator for title -->
+        <div v-if="isTranslatingTitle" class="flex items-center gap-1 mt-1 text-text-secondary">
+          <PhSpinnerGap :size="12" class="animate-spin" />
+          <span class="text-xs">{{ t('translating') }}</span>
+        </div>
+      </div>
+
       <div
         class="text-xs sm:text-sm text-text-secondary mb-4 sm:mb-6 flex flex-wrap items-center gap-2 sm:gap-4"
       >
         <span>{{ article.feed_title }}</span>
         <span class="hidden sm:inline">•</span>
         <span>{{ formatDate(article.published_at, locale === 'zh-CN' ? 'zh-CN' : 'en-US') }}</span>
+        <span v-if="translationEnabled" class="flex items-center gap-1 text-accent">
+          <PhTranslate :size="14" />
+          <span class="text-xs">{{ t('autoTranslateEnabled') }}</span>
+        </span>
       </div>
 
       <!-- Summary Section -->
@@ -146,9 +284,27 @@ onMounted(async () => {
           </div>
 
           <!-- Summary Display -->
-          <p v-else-if="summaryResult?.summary" class="text-sm text-text-primary leading-relaxed">
-            {{ summaryResult.summary }}
-          </p>
+          <div v-else-if="summaryResult?.summary">
+            <!-- Show translated summary only when translation is enabled -->
+            <div
+              v-if="translationEnabled && translatedSummary"
+              class="text-sm text-text-primary leading-relaxed"
+            >
+              {{ translatedSummary }}
+            </div>
+            <!-- Show original summary when no translation or as fallback -->
+            <p v-else class="text-sm text-text-primary leading-relaxed">
+              {{ summaryResult.summary }}
+            </p>
+            <!-- Translation loading indicator -->
+            <div
+              v-if="isTranslatingSummary"
+              class="flex items-center gap-1 mt-2 text-text-secondary"
+            >
+              <PhSpinnerGap :size="12" class="animate-spin" />
+              <span class="text-xs">{{ t('translating') }}</span>
+            </div>
+          </div>
 
           <!-- No Summary Available -->
           <div v-else class="text-sm text-text-secondary italic">
@@ -184,12 +340,45 @@ onMounted(async () => {
         </p>
       </div>
 
-      <!-- Content display -->
-      <div
-        v-else-if="articleContent"
-        class="prose prose-sm sm:prose-lg max-w-none text-text-primary"
-        v-html="articleContent"
-      ></div>
+      <!-- Content display - Bilingual when translation enabled -->
+      <div v-else-if="articleContent">
+        <!-- Bilingual content display -->
+        <div v-if="showBilingualContent" class="space-y-6">
+          <!-- Translated content -->
+          <div class="prose prose-sm sm:prose-lg max-w-none text-text-primary">
+            <div class="whitespace-pre-wrap">{{ translatedContent }}</div>
+          </div>
+
+          <!-- Divider -->
+          <div class="flex items-center gap-4 py-4">
+            <div class="flex-1 border-t border-border"></div>
+            <span class="text-xs text-text-secondary flex items-center gap-1">
+              <PhTranslate :size="14" />
+              {{ t('originalContent') }}
+            </span>
+            <div class="flex-1 border-t border-border"></div>
+          </div>
+
+          <!-- Original content -->
+          <div
+            class="prose prose-sm sm:prose-lg max-w-none text-text-secondary opacity-80"
+            v-html="articleContent"
+          ></div>
+        </div>
+
+        <!-- Single language content (no translation or still translating) -->
+        <div v-else>
+          <div
+            class="prose prose-sm sm:prose-lg max-w-none text-text-primary"
+            v-html="articleContent"
+          ></div>
+          <!-- Translation loading indicator -->
+          <div v-if="isTranslatingContent" class="flex items-center gap-2 mt-4 text-text-secondary">
+            <PhSpinnerGap :size="16" class="animate-spin" />
+            <span class="text-sm">{{ t('translatingContent') }}</span>
+          </div>
+        </div>
+      </div>
 
       <!-- No content available -->
       <div v-else class="text-center text-text-secondary py-6 sm:py-8">

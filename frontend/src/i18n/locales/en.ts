@@ -160,6 +160,10 @@ const en: TranslationMessages = {
   summaryTooShort: 'Article is too short to generate a meaningful summary',
   noSummaryAvailable: 'Summary not available',
   generateSummary: 'Generate Summary',
+  translating: 'Translating...',
+  translatingContent: 'Translating content...',
+  autoTranslateEnabled: 'Auto-translate enabled',
+  originalContent: 'Original',
 
   // Languages
   english: 'English',

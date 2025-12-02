@@ -158,6 +158,10 @@ export interface TranslationMessages {
   summaryTooShort: string;
   noSummaryAvailable: string;
   generateSummary: string;
+  translating: string;
+  translatingContent: string;
+  autoTranslateEnabled: string;
+  originalContent: string;
 
   // Languages
   english: string;
