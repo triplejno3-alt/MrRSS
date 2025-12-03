@@ -30,6 +30,8 @@ export function useFeedManagement() {
         if (res.ok) {
           window.showToast(t('opmlImportedSuccess'), 'success');
           store.fetchFeeds();
+          // Start polling for progress as the backend is now fetching articles for imported feeds
+          store.pollProgress();
         } else {
           const text = await res.text();
           window.showToast(t('importFailed', { error: text }), 'error');

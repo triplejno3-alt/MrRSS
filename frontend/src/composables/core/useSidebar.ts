@@ -123,11 +123,8 @@ export function useSidebar() {
     } else if (action === 'refreshFeed') {
       await fetch(`/api/feeds/refresh?id=${feed.id}`, { method: 'POST' });
       window.showToast(t('feedRefreshStarted'), 'success');
-      // Refresh articles after a short delay to show new content
-      setTimeout(() => {
-        store.fetchArticles();
-        store.fetchUnreadCounts();
-      }, 2000);
+      // Start polling for progress as the backend is now fetching articles for this feed
+      store.pollProgress();
     } else if (action === 'delete') {
       const confirmed = await window.showConfirm({
         title: t('unsubscribeTitle'),

@@ -272,10 +272,134 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed models.Feed) {
 	log.Printf("Updated feed: %s", feed.Title)
 }
 
-func (f *Fetcher) AddSubscription(url string, category string, customTitle string) error {
+// FetchSingleFeed fetches a single feed with progress tracking.
+// This is used when adding a new feed or refreshing a single feed from the context menu.
+func (f *Fetcher) FetchSingleFeed(ctx context.Context, feed models.Feed) {
+	f.mu.Lock()
+	if f.progress.IsRunning {
+		f.mu.Unlock()
+		// Wait for current operation to complete
+		for f.GetProgress().IsRunning {
+			time.Sleep(100 * time.Millisecond)
+		}
+		f.mu.Lock()
+	}
+	f.progress.IsRunning = true
+	f.progress.Total = 1
+	f.progress.Current = 0
+	f.mu.Unlock()
+
+	// Setup translator based on settings
+	provider, _ := f.db.GetSetting("translation_provider")
+	apiKey, _ := f.db.GetSetting("deepl_api_key")
+
+	var t translation.Translator
+	if provider == "deepl" && apiKey != "" {
+		t = translation.NewDeepLTranslator(apiKey)
+	} else {
+		t = translation.NewGoogleFreeTranslator()
+	}
+	f.translator = t
+
+	// Fetch the feed
+	f.FetchFeed(ctx, feed)
+
+	f.mu.Lock()
+	f.progress.Current = 1
+	f.progress.IsRunning = false
+	f.mu.Unlock()
+
+	// Update last article update time
+	f.db.SetSetting("last_article_update", time.Now().Format(time.RFC3339))
+	log.Printf("Single feed update complete: %s", feed.Title)
+}
+
+// FetchFeedsByIDs fetches multiple feeds by their IDs with progress tracking.
+// This is used after OPML import or when refreshing specific feeds.
+func (f *Fetcher) FetchFeedsByIDs(ctx context.Context, feedIDs []int64) {
+	f.mu.Lock()
+	if f.progress.IsRunning {
+		f.mu.Unlock()
+		// Wait for current operation to complete
+		for f.GetProgress().IsRunning {
+			time.Sleep(100 * time.Millisecond)
+		}
+		f.mu.Lock()
+	}
+	f.progress.IsRunning = true
+	f.progress.Total = len(feedIDs)
+	f.progress.Current = 0
+	f.mu.Unlock()
+
+	// Setup translator based on settings
+	provider, _ := f.db.GetSetting("translation_provider")
+	apiKey, _ := f.db.GetSetting("deepl_api_key")
+
+	var t translation.Translator
+	if provider == "deepl" && apiKey != "" {
+		t = translation.NewDeepLTranslator(apiKey)
+	} else {
+		t = translation.NewGoogleFreeTranslator()
+	}
+	f.translator = t
+
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5) // Limit concurrency
+
+	for _, feedID := range feedIDs {
+		// Check for cancellation
+		select {
+		case <-ctx.Done():
+			log.Println("FetchFeedsByIDs cancelled")
+			goto Finish
+		default:
+		}
+
+		feed, err := f.db.GetFeedByID(feedID)
+		if err != nil {
+			log.Printf("Error getting feed %d: %v", feedID, err)
+			f.mu.Lock()
+			f.progress.Current++
+			f.mu.Unlock()
+			continue
+		}
+
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(fd models.Feed) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			f.FetchFeed(ctx, fd)
+			f.mu.Lock()
+			f.progress.Current++
+			f.mu.Unlock()
+		}(*feed)
+	}
+
+Finish:
+	wg.Wait()
+
+	f.mu.Lock()
+	f.progress.IsRunning = false
+	f.mu.Unlock()
+
+	// Update last article update time
+	f.db.SetSetting("last_article_update", time.Now().Format(time.RFC3339))
+	log.Printf("Batch feed update complete for %d feeds", len(feedIDs))
+}
+
+// AddSubscription adds a new feed subscription and returns the feed ID.
+func (f *Fetcher) AddSubscription(url string, category string, customTitle string) (int64, error) {
 	parsedFeed, err := f.fp.ParseURL(url)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	title := parsedFeed.Title
@@ -299,10 +423,11 @@ func (f *Fetcher) AddSubscription(url string, category string, customTitle strin
 }
 
 // AddScriptSubscription adds a new feed subscription that uses a custom script
-func (f *Fetcher) AddScriptSubscription(scriptPath string, category string, customTitle string) error {
+// and returns the feed ID.
+func (f *Fetcher) AddScriptSubscription(scriptPath string, category string, customTitle string) (int64, error) {
 	// Validate script path
 	if f.scriptExecutor == nil {
-		return &ScriptError{Message: "script executor not initialized"}
+		return 0, &ScriptError{Message: "script executor not initialized"}
 	}
 
 	// Execute script to get initial feed info
@@ -311,7 +436,7 @@ func (f *Fetcher) AddScriptSubscription(scriptPath string, category string, cust
 
 	parsedFeed, err := f.scriptExecutor.ExecuteScript(ctx, scriptPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	title := parsedFeed.Title
@@ -347,7 +472,8 @@ func (e *ScriptError) Error() string {
 	return e.Message
 }
 
-func (f *Fetcher) ImportSubscription(title, url, category string) error {
+// ImportSubscription imports a feed subscription and returns the feed ID.
+func (f *Fetcher) ImportSubscription(title, url, category string) (int64, error) {
 	feed := &models.Feed{
 		Title:    title,
 		URL:      url,

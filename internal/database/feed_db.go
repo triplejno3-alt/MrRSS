@@ -8,7 +8,8 @@ import (
 )
 
 // AddFeed adds a new feed or updates an existing one.
-func (db *DB) AddFeed(feed *models.Feed) error {
+// Returns the feed ID and any error encountered.
+func (db *DB) AddFeed(feed *models.Feed) (int64, error) {
 	db.WaitForReady()
 
 	// Check if feed already exists
@@ -18,16 +19,23 @@ func (db *DB) AddFeed(feed *models.Feed) error {
 	if err == sql.ErrNoRows {
 		// Feed doesn't exist, insert new
 		query := `INSERT INTO feeds (title, url, link, description, category, image_url, script_path, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-		_, err := db.Exec(query, feed.Title, feed.URL, feed.Link, feed.Description, feed.Category, feed.ImageURL, feed.ScriptPath, time.Now())
-		return err
+		result, err := db.Exec(query, feed.Title, feed.URL, feed.Link, feed.Description, feed.Category, feed.ImageURL, feed.ScriptPath, time.Now())
+		if err != nil {
+			return 0, err
+		}
+		newID, err := result.LastInsertId()
+		if err != nil {
+			return 0, err
+		}
+		return newID, nil
 	} else if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Feed exists, update it
 	query := `UPDATE feeds SET title = ?, link = ?, description = ?, category = ?, image_url = ?, script_path = ?, last_updated = ? WHERE id = ?`
 	_, err = db.Exec(query, feed.Title, feed.Link, feed.Description, feed.Category, feed.ImageURL, feed.ScriptPath, time.Now(), existingID)
-	return err
+	return existingID, err
 }
 
 // DeleteFeed deletes a feed and all its articles.

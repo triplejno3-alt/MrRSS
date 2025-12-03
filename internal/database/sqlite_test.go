@@ -74,7 +74,7 @@ func TestDatabasePerformanceWithIndexes(t *testing.T) {
 		Description: "Test Description",
 		Category:    "test",
 	}
-	err = db.AddFeed(feed)
+	_, err = db.AddFeed(feed)
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -196,7 +196,7 @@ func BenchmarkGetArticles(b *testing.B) {
 		URL:         "https://example.com/bench",
 		Description: "Bench Description",
 	}
-	err = db.AddFeed(feed)
+	_, err = db.AddFeed(feed)
 	if err != nil {
 		b.Fatalf("Failed to add feed: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestCleanupOldArticles(t *testing.T) {
 		URL:         "https://example.com/test",
 		Description: "Test Description",
 	}
-	err = db.AddFeed(feed)
+	_, err = db.AddFeed(feed)
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -344,7 +344,7 @@ func TestCleanupUnimportantArticles(t *testing.T) {
 		URL:         "https://example.com/test",
 		Description: "Test Description",
 	}
-	err = db.AddFeed(feed)
+	_, err = db.AddFeed(feed)
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}

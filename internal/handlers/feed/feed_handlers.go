@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"MrRSS/internal/handlers/core"
 )
@@ -20,7 +19,7 @@ func HandleFeeds(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(feeds)
 }
 
-// HandleAddFeed adds a new feed subscription.
+// HandleAddFeed adds a new feed subscription and immediately fetches its articles.
 func HandleAddFeed(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		URL        string `json:"url"`
@@ -33,19 +32,30 @@ func HandleAddFeed(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var feedID int64
 	var err error
 	if req.ScriptPath != "" {
 		// Add feed using custom script
-		err = h.Fetcher.AddScriptSubscription(req.ScriptPath, req.Category, req.Title)
+		feedID, err = h.Fetcher.AddScriptSubscription(req.ScriptPath, req.Category, req.Title)
 	} else {
 		// Add feed using URL
-		err = h.Fetcher.AddSubscription(req.URL, req.Category, req.Title)
+		feedID, err = h.Fetcher.AddSubscription(req.URL, req.Category, req.Title)
 	}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Immediately fetch articles for the newly added feed in background
+	go func() {
+		feed, err := h.DB.GetFeedByID(feedID)
+		if err != nil {
+			return
+		}
+		h.Fetcher.FetchSingleFeed(context.Background(), *feed)
+	}()
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -81,7 +91,7 @@ func HandleUpdateFeed(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// HandleRefreshFeed refreshes a single feed by ID.
+// HandleRefreshFeed refreshes a single feed by ID with progress tracking.
 func HandleRefreshFeed(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -101,24 +111,8 @@ func HandleRefreshFeed(h *core.Handler, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Check if FetchAll is currently running
-	progress := h.Fetcher.GetProgress()
-	wasRunning := progress.IsRunning
-
-	if wasRunning {
-		// Wait for the current FetchAll to complete
-		for h.Fetcher.GetProgress().IsRunning {
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-
-	// Refresh the feed in background
-	go h.Fetcher.FetchFeed(context.Background(), *feed)
-
-	// If FetchAll was running, restart it
-	if wasRunning {
-		go h.Fetcher.FetchAll(context.Background())
-	}
+	// Refresh the feed in background with progress tracking
+	go h.Fetcher.FetchSingleFeed(context.Background(), *feed)
 
 	w.WriteHeader(http.StatusOK)
 }

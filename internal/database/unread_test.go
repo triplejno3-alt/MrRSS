@@ -29,7 +29,7 @@ func TestUnreadCounts(t *testing.T) {
 		URL:      "https://example.com/feed",
 		Category: "Test",
 	}
-	err = db.AddFeed(feed)
+	_, err = db.AddFeed(feed)
 	if err != nil {
 		t.Fatalf("Failed to create feed: %v", err)
 	}

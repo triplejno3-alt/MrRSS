@@ -126,7 +126,8 @@ function toggleSidebar(): void {
 
 function onFeedAdded(): void {
   store.fetchFeeds();
-  store.fetchArticles(); // Refresh articles too
+  // Start polling for progress as the backend is now fetching articles for the new feed
+  store.pollProgress();
 }
 
 function onFeedUpdated(): void {
