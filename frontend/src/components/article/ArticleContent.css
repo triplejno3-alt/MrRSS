@@ -6,7 +6,7 @@
 }
 
 /* Enhanced heading typography with proper hierarchy */
-.prose :deep(h1) {
+.prose h1 {
   color: var(--text-primary);
   font-weight: 700;
   font-size: 2.25em;
@@ -16,7 +16,7 @@
   letter-spacing: -0.025em;
 }
 
-.prose :deep(h2) {
+.prose h2 {
   color: var(--text-primary);
   font-weight: 700;
   font-size: 1.875em;
@@ -26,7 +26,7 @@
   letter-spacing: -0.02em;
 }
 
-.prose :deep(h3) {
+.prose h3 {
   color: var(--text-primary);
   font-weight: 600;
   font-size: 1.5em;
@@ -36,7 +36,7 @@
   letter-spacing: -0.01em;
 }
 
-.prose :deep(h4) {
+.prose h4 {
   color: var(--text-primary);
   font-weight: 600;
   font-size: 1.25em;
@@ -45,7 +45,7 @@
   margin-bottom: 0.5em;
 }
 
-.prose :deep(h5) {
+.prose h5 {
   color: var(--text-primary);
   font-weight: 600;
   font-size: 1.125em;
@@ -54,7 +54,7 @@
   margin-bottom: 0.5em;
 }
 
-.prose :deep(h6) {
+.prose h6 {
   color: var(--text-primary);
   font-weight: 600;
   font-size: 1em;
@@ -62,20 +62,20 @@
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
-.prose :deep(p) {
+.prose p {
   margin-top: 1.25em;
   margin-bottom: 1.25em;
   line-height: 1.75;
 }
 
-.prose :deep(p:first-child) {
+.prose p:first-child {
   margin-top: 0;
 }
 
-.prose :deep(p:last-child) {
+.prose p:last-child {
   margin-bottom: 0;
 }
-.prose :deep(a) {
+.prose a {
   color: var(--accent-color);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -85,16 +85,16 @@
   transition: all 0.2s ease-in-out;
 }
 
-.prose :deep(a:hover) {
+.prose a:hover {
   color: var(--accent-hover);
   text-decoration-thickness: 2px;
 }
 
-.prose :deep(a:visited) {
+.prose a:visited {
   color: var(--accent-color);
   opacity: 0.8;
 }
-.prose :deep(img) {
+.prose img {
   max-width: 100%;
   height: auto;
   border-radius: 0.5rem;
@@ -105,12 +105,12 @@
   display: block;
 }
 
-.prose :deep(img:hover) {
+.prose img:hover {
   opacity: 0.95;
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
-.prose :deep(pre) {
+.prose pre {
   background-color: var(--bg-secondary);
   padding: 1.25em 1.5em;
   border-radius: 0.5rem;
@@ -121,7 +121,7 @@
   line-height: 1.7142857;
 }
 
-.prose :deep(pre code) {
+.prose pre code {
   background-color: transparent;
   border-width: 0;
   border-radius: 0;
@@ -133,7 +133,7 @@
   line-height: inherit;
 }
 
-.prose :deep(code) {
+.prose code {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   padding: 0.2em 0.4em;
@@ -143,7 +143,7 @@
   border: 1px solid var(--border-color);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
-.prose :deep(blockquote) {
+.prose blockquote {
   border-left: 4px solid var(--accent-color);
   padding-left: 1.5em;
   padding-right: 1.5em;
@@ -157,74 +157,74 @@
   quotes: "\201C""\201D""\2018""\2019";
 }
 
-.prose :deep(blockquote p:first-of-type::before) {
+.prose blockquote p:first-of-type::before {
   content: open-quote;
 }
 
-.prose :deep(blockquote p:last-of-type::after) {
+.prose blockquote p:last-of-type::after {
   content: close-quote;
 }
 
-.prose :deep(blockquote p) {
+.prose blockquote p {
   margin: 0;
 }
 
-.prose :deep(blockquote p + p) {
+.prose blockquote p + p {
   margin-top: 1em;
 }
-.prose :deep(ul),
-.prose :deep(ol) {
+.prose ul,
+.prose ol {
   margin-top: 1.25em;
   margin-bottom: 1.25em;
   padding-left: 1.625em;
 }
 
-.prose :deep(ul) {
+.prose ul {
   list-style-type: disc;
 }
 
-.prose :deep(ol) {
+.prose ol {
   list-style-type: decimal;
 }
 
-.prose :deep(ul ul),
-.prose :deep(ul ol),
-.prose :deep(ol ul),
-.prose :deep(ol ol) {
+.prose ul ul,
+.prose ul ol,
+.prose ol ul,
+.prose ol ol {
   margin-top: 0.75em;
   margin-bottom: 0.75em;
 }
 
-.prose :deep(li) {
+.prose li {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
   line-height: 1.75;
 }
 
-.prose :deep(li p) {
+.prose li p {
   margin-top: 0.75em;
   margin-bottom: 0.75em;
 }
 
-.prose :deep(li > *:first-child) {
+.prose li > *:first-child {
   margin-top: 1.25em;
 }
 
-.prose :deep(li > *:last-child) {
+.prose li > *:last-child {
   margin-bottom: 1.25em;
 }
 
-.prose :deep(ul > li::marker) {
+.prose ul > li::marker {
   color: var(--text-secondary);
 }
 
-.prose :deep(ol > li::marker) {
+.prose ol > li::marker {
   color: var(--text-secondary);
   font-weight: 600;
 }
 
 /* Translation text styling - lighter color */
-.prose :deep(.translation-text) {
+.prose .translation-text {
   color: var(--text-secondary);
   opacity: 0.85;
   margin-top: 0.25em;
@@ -234,7 +234,7 @@
 }
 
 /* Blockquote translation preserves blockquote style */
-.prose :deep(blockquote.translation-text) {
+.prose blockquote.translation-text {
   border-left: 4px solid var(--accent-color);
   padding-left: 1em;
   font-style: italic;
@@ -243,7 +243,7 @@
 }
 
 /* Audio player styling - podcast support */
-.prose :deep(audio) {
+.prose audio {
   width: 100%;
   max-width: 100%;
   min-height: 54px;
@@ -254,8 +254,8 @@
 }
 
 /* Audio container for enhanced podcast display */
-.prose :deep(.audio-container),
-.prose :deep(.podcast-player) {
+.prose .audio-container,
+.prose .podcast-player {
   display: flex;
   flex-direction: column;
   gap: 0.75em;
@@ -267,7 +267,7 @@
 }
 
 /* Video player styling */
-.prose :deep(video) {
+.prose video {
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -280,8 +280,8 @@
 }
 
 /* Video container for enhanced display */
-.prose :deep(.video-container),
-.prose :deep(.video-wrapper) {
+.prose .video-container,
+.prose .video-wrapper {
   position: relative;
   width: 100%;
   margin: 1.5em 0;
@@ -293,15 +293,15 @@
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.prose :deep(.video-container video),
-.prose :deep(.video-wrapper video) {
+.prose .video-container video,
+.prose .video-wrapper video {
   margin: 0;
   border-radius: 0;
   box-shadow: none;
 }
 
 /* Iframe for embedded videos (YouTube, Vimeo, etc.) */
-.prose :deep(iframe) {
+.prose iframe {
   width: 100%;
   max-width: 100%;
   aspect-ratio: 16 / 9;
@@ -315,9 +315,9 @@
 }
 
 /* Responsive iframe container */
-.prose :deep(.iframe-container),
-.prose :deep(.embed-container),
-.prose :deep(.video-embed) {
+.prose .iframe-container,
+.prose .embed-container,
+.prose .video-embed {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%; /* 16:9 aspect ratio */
@@ -330,9 +330,9 @@
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.prose :deep(.iframe-container iframe),
-.prose :deep(.embed-container iframe),
-.prose :deep(.video-embed iframe) {
+.prose .iframe-container iframe,
+.prose .embed-container iframe,
+.prose .video-embed iframe {
   position: absolute;
   top: 0;
   left: 0;
@@ -344,16 +344,16 @@
 }
 
 /* Enhanced figure and figcaption styling for media */
-.prose :deep(figure) {
+.prose figure {
   margin: 2em 0;
 }
 
-.prose :deep(figure > *) {
+.prose figure > * {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.prose :deep(figcaption) {
+.prose figcaption {
   font-size: 0.875em;
   color: var(--text-secondary);
   text-align: center;
@@ -364,7 +364,7 @@
 }
 
 /* Enclosure media container styling (RSS media enclosures) */
-.prose :deep(.media-enclosure) {
+.prose .media-enclosure {
   margin: 1.5em 0;
   padding: 1em;
   background-color: var(--bg-secondary);
@@ -373,7 +373,7 @@
 }
 
 /* Enhanced table styling with better visual design */
-.prose :deep(table) {
+.prose table {
   width: 100%;
   border-collapse: collapse;
   margin: 2em 0;
@@ -384,11 +384,11 @@
   overflow: hidden;
 }
 
-.prose :deep(thead) {
+.prose thead {
   border-bottom: 2px solid var(--border-color);
 }
 
-.prose :deep(th) {
+.prose th {
   background-color: var(--bg-secondary);
   font-weight: 600;
   color: var(--text-primary);
@@ -398,11 +398,11 @@
   vertical-align: bottom;
 }
 
-.prose :deep(th:last-child) {
+.prose th:last-child {
   border-right: none;
 }
 
-.prose :deep(td) {
+.prose td {
   padding: 0.875em 1em;
   border-right: 1px solid var(--border-color);
   border-bottom: 1px solid var(--border-color);
@@ -410,25 +410,25 @@
   vertical-align: top;
 }
 
-.prose :deep(td:last-child) {
+.prose td:last-child {
   border-right: none;
 }
 
-.prose :deep(tbody tr:last-child td) {
+.prose tbody tr:last-child td {
   border-bottom: none;
 }
 
-.prose :deep(tbody tr:hover) {
+.prose tbody tr:hover {
   background-color: var(--bg-secondary);
   transition: background-color 0.2s ease;
 }
 
-.prose :deep(tbody tr:nth-child(odd)) {
+.prose tbody tr:nth-child(odd) {
   background-color: var(--table-stripe-color);
 }
 
 /* Enhanced horizontal rule styling */
-.prose :deep(hr) {
+.prose hr {
   border: none;
   border-top: 1px solid var(--border-color);
   margin: 3em 0;
@@ -436,18 +436,18 @@
 }
 
 /* Enhanced definition list styling */
-.prose :deep(dl) {
+.prose dl {
   margin-top: 1.25em;
   margin-bottom: 1.25em;
 }
 
-.prose :deep(dt) {
+.prose dt {
   font-weight: 600;
   margin-top: 1.25em;
   color: var(--text-primary);
 }
 
-.prose :deep(dd) {
+.prose dd {
   margin-top: 0.5em;
   margin-left: 1.625em;
   padding-left: 1.625em;
@@ -456,17 +456,17 @@
 }
 
 /* Strong and emphasis styling */
-.prose :deep(strong) {
+.prose strong {
   color: var(--text-primary);
   font-weight: 600;
 }
 
-.prose :deep(em) {
+.prose em {
   font-style: italic;
 }
 
 /* Kbd (keyboard key) styling */
-.prose :deep(kbd) {
+.prose kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.875em;
   font-weight: 500;
@@ -479,7 +479,7 @@
 }
 
 /* Mark (highlighted text) styling */
-.prose :deep(mark) {
+.prose mark {
   background-color: var(--mark-bg-color);
   color: var(--text-primary);
   padding: 0.125em 0.25em;
@@ -487,7 +487,7 @@
 }
 
 /* Abbreviation styling */
-.prose :deep(abbr[title]) {
+.prose abbr[title] {
   text-decoration: underline dotted;
   cursor: help;
   text-decoration-thickness: 1px;
@@ -500,34 +500,34 @@
     font-size: 0.9375rem; /* Slightly smaller base font on mobile */
   }
 
-  .prose :deep(h1) {
+  .prose h1 {
     font-size: 1.875em; /* Reduce h1 size on mobile */
     line-height: 1.2;
     margin-bottom: 0.75em;
   }
 
-  .prose :deep(h2) {
+  .prose h2 {
     font-size: 1.5em;
     margin-top: 1.5em;
   }
 
-  .prose :deep(h3) {
+  .prose h3 {
     font-size: 1.25em;
   }
 
-  .prose :deep(table) {
+  .prose table {
     font-size: 0.8125em; /* Smaller table text on mobile */
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .prose :deep(th),
-  .prose :deep(td) {
+  .prose th,
+  .prose td {
     padding: 0.625em 0.75em; /* Reduce padding on mobile */
   }
 
-  .prose :deep(blockquote) {
+  .prose blockquote {
     padding-left: 1em;
     padding-right: 1em;
     padding-top: 0.5em;
@@ -535,19 +535,19 @@
     margin: 1.25em 0;
   }
 
-  .prose :deep(pre) {
+  .prose pre {
     padding: 1em;
     font-size: 0.8125em;
     margin: 1.25em 0;
   }
 
-  .prose :deep(img) {
+  .prose img {
     margin: 1.5em 0;
   }
 }
 
 /* Smooth scrolling for anchor links */
-.prose :deep(a[href^="#"]) {
+.prose a[href^="#"] {
   scroll-behavior: smooth;
 }
 
@@ -558,34 +558,34 @@
     line-height: 1.5;
   }
 
-  .prose :deep(a) {
+  .prose a {
     text-decoration: underline;
   }
 
-  .prose :deep(a[href]::after) {
+  .prose a[href]::after {
     content: " (" attr(href) ")";
     font-size: 0.875em;
     color: var(--text-secondary);
   }
 
-  .prose :deep(img) {
+  .prose img {
     max-width: 100%;
     page-break-inside: avoid;
   }
 
-  .prose :deep(h1),
-  .prose :deep(h2),
-  .prose :deep(h3),
-  .prose :deep(h4),
-  .prose :deep(h5),
-  .prose :deep(h6) {
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
     page-break-after: avoid;
     page-break-inside: avoid;
   }
 
-  .prose :deep(table),
-  .prose :deep(pre),
-  .prose :deep(blockquote) {
+  .prose table,
+  .prose pre,
+  .prose blockquote {
     page-break-inside: avoid;
   }
 }
