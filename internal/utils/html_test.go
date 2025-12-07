@@ -81,6 +81,11 @@ func TestCleanHTML(t *testing.T) {
 			input:    `<p--><img decoding="async" loading="lazy" class="alignright" src="test.png" alt="" width="300">这两天技术圈里热议的一件事</p>`,
 			expected: `<p><img decoding="async" loading="lazy" class="alignright" src="test.png" alt="" width="300">这两天技术圈里热议的一件事</p>`,
 		},
+		{
+			name:     "Multiple malformed tags in sequence",
+			input:    `<p-->Text<img src="a.png"--><br-->More text</p>`,
+			expected: `<p>Text<img src="a.png"><br>More text</p>`,
+		},
 	}
 
 	for _, tt := range tests {
