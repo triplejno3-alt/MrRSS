@@ -175,5 +175,8 @@ func runMigrations(db *sql.DB) error {
 	// Migration: Add audio_url column for podcast support
 	_, _ = db.Exec(`ALTER TABLE articles ADD COLUMN audio_url TEXT DEFAULT ''`)
 
+	// Migration: Add video_url column for YouTube video support
+	_, _ = db.Exec(`ALTER TABLE articles ADD COLUMN video_url TEXT DEFAULT ''`)
+
 	return nil
 }

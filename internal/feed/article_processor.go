@@ -26,6 +26,7 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*mod
 
 		imageURL := extractImageURL(item)
 		audioURL := extractAudioURL(item)
+		videoURL := extractVideoURL(item)
 
 		// Extract Media RSS content (YouTube feeds)
 		mediaTitle := extractMediaTitle(item)
@@ -64,6 +65,7 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*mod
 			URL:             item.Link,
 			ImageURL:        imageURL,
 			AudioURL:        audioURL,
+			VideoURL:        videoURL,
 			Content:         content,
 			PublishedAt:     published,
 			TranslatedTitle: translatedTitle,
@@ -115,6 +117,65 @@ func extractAudioURL(item *gofeed.Item) string {
 		// Check for audio MIME types
 		if strings.HasPrefix(enc.Type, "audio/") {
 			return enc.URL
+		}
+	}
+
+	return ""
+}
+
+// extractVideoURL extracts the video URL from a feed item (for YouTube videos)
+func extractVideoURL(item *gofeed.Item) string {
+	// Check if this is a YouTube link
+	if item.Link != "" && (strings.Contains(item.Link, "youtube.com/watch") || strings.Contains(item.Link, "youtu.be/")) {
+		// Extract video ID from YouTube URL
+		videoID := extractYouTubeVideoID(item.Link)
+		if videoID != "" {
+			// Return embed URL for YouTube player
+			return "https://www.youtube.com/embed/" + videoID
+		}
+	}
+
+	// Also check for yt:videoId in extensions
+	if item.Extensions != nil {
+		if ytExt, ok := item.Extensions["yt"]; ok {
+			if videoIDExts, ok := ytExt["videoId"]; ok && len(videoIDExts) > 0 {
+				videoID := videoIDExts[0].Value
+				if videoID != "" {
+					return "https://www.youtube.com/embed/" + videoID
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+// extractYouTubeVideoID extracts the video ID from a YouTube URL
+func extractYouTubeVideoID(url string) string {
+	// Handle youtube.com/watch?v=VIDEO_ID
+	if strings.Contains(url, "youtube.com/watch") {
+		re := regexp.MustCompile(`[?&]v=([^&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	// Handle youtu.be/VIDEO_ID
+	if strings.Contains(url, "youtu.be/") {
+		re := regexp.MustCompile(`youtu\.be/([^?&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	// Handle youtube.com/shorts/VIDEO_ID
+	if strings.Contains(url, "youtube.com/shorts/") {
+		re := regexp.MustCompile(`shorts/([^?&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
 		}
 	}
 

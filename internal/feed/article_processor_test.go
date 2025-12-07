@@ -421,4 +421,10 @@ func TestProcessArticlesWithYouTubeFeed(t *testing.T) {
 	if article.URL != expectedURL {
 		t.Errorf("Expected URL '%s', got '%s'", expectedURL, article.URL)
 	}
+
+	// Should extract video URL for embedded player
+	expectedVideoURL := "https://www.youtube.com/embed/KZcE7HgtFsA"
+	if article.VideoURL != expectedVideoURL {
+		t.Errorf("Expected video URL '%s', got '%s'", expectedVideoURL, article.VideoURL)
+	}
 }
