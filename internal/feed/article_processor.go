@@ -26,25 +26,37 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*mod
 
 		imageURL := extractImageURL(item)
 		audioURL := extractAudioURL(item)
+		videoURL := extractVideoURL(item)
 
-		translatedTitle := ""
-		if translationEnabled && f.translator != nil {
-			t, err := f.translator.Translate(item.Title, targetLang)
-			if err == nil {
-				translatedTitle = t
-			}
+		// Extract Media RSS content (YouTube feeds)
+		mediaTitle := extractMediaTitle(item)
+		mediaDescription := extractMediaDescription(item)
+
+		// Extract content from RSS item (prefer media:description, then Content, then Description)
+		content := mediaDescription
+		if content == "" {
+			content = item.Content
 		}
-
-		// Extract content from RSS item (prefer Content over Description)
-		content := item.Content
 		if content == "" {
 			content = item.Description
 		}
 
-		// Generate title if missing
+		// Determine title: prefer media:title if available, then item.Title, then generate from content
 		title := item.Title
+		if mediaTitle != "" {
+			title = mediaTitle
+		}
 		if title == "" {
+			// Fallback to generating from the processed content
 			title = generateTitleFromContent(content)
+		}
+
+		translatedTitle := ""
+		if translationEnabled && f.translator != nil {
+			t, err := f.translator.Translate(title, targetLang)
+			if err == nil {
+				translatedTitle = t
+			}
 		}
 
 		article := &models.Article{
@@ -53,6 +65,7 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*mod
 			URL:             item.Link,
 			ImageURL:        imageURL,
 			AudioURL:        audioURL,
+			VideoURL:        videoURL,
 			Content:         content,
 			PublishedAt:     published,
 			TranslatedTitle: translatedTitle,
@@ -68,6 +81,11 @@ func extractImageURL(item *gofeed.Item) string {
 	// Try item.Image first
 	if item.Image != nil {
 		return item.Image.URL
+	}
+
+	// Try Media RSS thumbnail (YouTube feeds use this)
+	if thumbnailURL := extractMediaThumbnail(item); thumbnailURL != "" {
+		return thumbnailURL
 	}
 
 	// Try enclosures for images (check various image MIME types)
@@ -105,6 +123,67 @@ func extractAudioURL(item *gofeed.Item) string {
 	return ""
 }
 
+// extractVideoURL extracts the video URL from a feed item (for YouTube videos)
+func extractVideoURL(item *gofeed.Item) string {
+	// Check if this is a YouTube link (watch, youtu.be, or shorts)
+	if item.Link != "" && (strings.Contains(item.Link, "youtube.com/watch") || 
+		strings.Contains(item.Link, "youtu.be/") || 
+		strings.Contains(item.Link, "youtube.com/shorts/")) {
+		// Extract video ID from YouTube URL
+		videoID := extractYouTubeVideoID(item.Link)
+		if videoID != "" {
+			// Return embed URL for YouTube player
+			return "https://www.youtube.com/embed/" + videoID
+		}
+	}
+
+	// Also check for yt:videoId in extensions
+	if item.Extensions != nil {
+		if ytExt, ok := item.Extensions["yt"]; ok {
+			if videoIDExts, ok := ytExt["videoId"]; ok && len(videoIDExts) > 0 {
+				videoID := videoIDExts[0].Value
+				if videoID != "" {
+					return "https://www.youtube.com/embed/" + videoID
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+// extractYouTubeVideoID extracts the video ID from a YouTube URL
+func extractYouTubeVideoID(url string) string {
+	// Handle youtube.com/watch?v=VIDEO_ID
+	if strings.Contains(url, "youtube.com/watch") {
+		re := regexp.MustCompile(`[?&]v=([^&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	// Handle youtu.be/VIDEO_ID
+	if strings.Contains(url, "youtu.be/") {
+		re := regexp.MustCompile(`youtu\.be/([^?&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	// Handle youtube.com/shorts/VIDEO_ID
+	if strings.Contains(url, "youtube.com/shorts/") {
+		re := regexp.MustCompile(`shorts/([^?&]+)`)
+		matches := re.FindStringSubmatch(url)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+
+	return ""
+}
+
 // generateTitleFromContent generates a title from content when title is missing
 func generateTitleFromContent(content string) string {
 	if content == "" {
@@ -129,4 +208,91 @@ func generateTitleFromContent(content string) string {
 	}
 
 	return plainText
+}
+
+// extractMediaThumbnail extracts the thumbnail URL from Media RSS extensions (used by YouTube)
+func extractMediaThumbnail(item *gofeed.Item) string {
+	if item.Extensions == nil {
+		return ""
+	}
+
+	// Check for media:group extension (YouTube uses this structure)
+	if mediaExt, ok := item.Extensions["media"]; ok {
+		if groupExts, ok := mediaExt["group"]; ok && len(groupExts) > 0 {
+			// Navigate to media:group's children
+			if groupExts[0].Children != nil {
+				if thumbnailExts, ok := groupExts[0].Children["thumbnail"]; ok && len(thumbnailExts) > 0 {
+					// Get the URL from the thumbnail's attributes
+					if thumbnailExts[0].Attrs != nil {
+						if url, ok := thumbnailExts[0].Attrs["url"]; ok {
+							return url
+						}
+					}
+				}
+			}
+		}
+
+		// Also check for direct media:thumbnail (some feeds use this)
+		if thumbnailExts, ok := mediaExt["thumbnail"]; ok && len(thumbnailExts) > 0 {
+			if thumbnailExts[0].Attrs != nil {
+				if url, ok := thumbnailExts[0].Attrs["url"]; ok {
+					return url
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+// extractMediaTitle extracts the title from Media RSS extensions (used by YouTube)
+func extractMediaTitle(item *gofeed.Item) string {
+	if item.Extensions == nil {
+		return ""
+	}
+
+	// Check for media:group extension (YouTube uses this structure)
+	if mediaExt, ok := item.Extensions["media"]; ok {
+		if groupExts, ok := mediaExt["group"]; ok && len(groupExts) > 0 {
+			// Navigate to media:group's children
+			if groupExts[0].Children != nil {
+				if titleExts, ok := groupExts[0].Children["title"]; ok && len(titleExts) > 0 {
+					return titleExts[0].Value
+				}
+			}
+		}
+
+		// Also check for direct media:title (some feeds use this)
+		if titleExts, ok := mediaExt["title"]; ok && len(titleExts) > 0 {
+			return titleExts[0].Value
+		}
+	}
+
+	return ""
+}
+
+// extractMediaDescription extracts the description from Media RSS extensions (used by YouTube)
+func extractMediaDescription(item *gofeed.Item) string {
+	if item.Extensions == nil {
+		return ""
+	}
+
+	// Check for media:group extension (YouTube uses this structure)
+	if mediaExt, ok := item.Extensions["media"]; ok {
+		if groupExts, ok := mediaExt["group"]; ok && len(groupExts) > 0 {
+			// Navigate to media:group's children
+			if groupExts[0].Children != nil {
+				if descExts, ok := groupExts[0].Children["description"]; ok && len(descExts) > 0 {
+					return descExts[0].Value
+				}
+			}
+		}
+
+		// Also check for direct media:description (some feeds use this)
+		if descExts, ok := mediaExt["description"]; ok && len(descExts) > 0 {
+			return descExts[0].Value
+		}
+	}
+
+	return ""
 }

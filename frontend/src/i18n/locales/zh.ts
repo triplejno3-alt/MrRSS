@@ -46,6 +46,9 @@ const zh: TranslationMessages = {
   pause: '暂停',
   downloadAudio: '下载音频文件',
   audioPlaybackError: '无法播放音频。文件可能不可用或格式不受支持。',
+  youtubeVideo: 'YouTube 视频',
+  openInYouTube: '在 YouTube 中打开',
+  videoLoadError: '无法加载视频。请尝试在 YouTube 中打开。',
 
   // Context Menu
   unsubscribe: '取消订阅',

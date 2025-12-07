@@ -7,6 +7,7 @@ import ArticleSummary from './parts/ArticleSummary.vue';
 import ArticleLoading from './parts/ArticleLoading.vue';
 import ArticleBody from './parts/ArticleBody.vue';
 import AudioPlayer from './parts/AudioPlayer.vue';
+import VideoPlayer from './parts/VideoPlayer.vue';
 import { useArticleSummary } from '@/composables/article/useArticleSummary';
 import { useArticleTranslation } from '@/composables/article/useArticleTranslation';
 import './ArticleContent.css';
@@ -260,6 +261,13 @@ onMounted(async () => {
         :article-title="article.title"
       />
 
+      <!-- Video Player (if article has video) -->
+      <VideoPlayer
+        v-if="article.video_url"
+        :video-url="article.video_url"
+        :article-title="article.title"
+      />
+
       <ArticleSummary
         :summary-result="summaryResult"
         :is-loading-summary="isLoadingSummary"
@@ -274,6 +282,7 @@ onMounted(async () => {
         v-else
         :article-content="articleContent"
         :is-translating-content="isTranslatingContent"
+        :has-media-content="!!(article.audio_url || article.video_url)"
       />
     </div>
   </div>

@@ -48,6 +48,9 @@ const en: TranslationMessages = {
   downloadAudio: 'Download Audio File',
   audioPlaybackError:
     'Failed to play audio. The file may be unavailable or in an unsupported format.',
+  youtubeVideo: 'YouTube Video',
+  openInYouTube: 'Open in YouTube',
+  videoLoadError: 'Failed to load video. Please try opening it in YouTube.',
 
   // Context Menu
   unsubscribe: 'Unsubscribe',

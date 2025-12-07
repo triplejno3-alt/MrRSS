@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Supported audio and video embedding in article content rendering mode.
+
 ### Changed
 
 - Enhanced styling of article content for better readability.
