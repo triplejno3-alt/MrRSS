@@ -282,6 +282,7 @@ onMounted(async () => {
         v-else
         :article-content="articleContent"
         :is-translating-content="isTranslatingContent"
+        :has-media-content="!!(article.audio_url || article.video_url)"
       />
     </div>
   </div>
