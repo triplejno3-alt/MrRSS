@@ -23,6 +23,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		aiAPIKey, _ := h.DB.GetSetting("ai_api_key")
 		aiEndpoint, _ := h.DB.GetSetting("ai_endpoint")
 		aiModel, _ := h.DB.GetSetting("ai_model")
+		aiSystemPrompt, _ := h.DB.GetSetting("ai_system_prompt")
 		autoCleanup, _ := h.DB.GetSetting("auto_cleanup_enabled")
 		maxCacheSize, _ := h.DB.GetSetting("max_cache_size_mb")
 		maxArticleAge, _ := h.DB.GetSetting("max_article_age_days")
@@ -40,6 +41,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		summaryAIAPIKey, _ := h.DB.GetSetting("summary_ai_api_key")
 		summaryAIEndpoint, _ := h.DB.GetSetting("summary_ai_endpoint")
 		summaryAIModel, _ := h.DB.GetSetting("summary_ai_model")
+		summaryAISystemPrompt, _ := h.DB.GetSetting("summary_ai_system_prompt")
 		json.NewEncoder(w).Encode(map[string]string{
 			"update_interval":      interval,
 			"translation_enabled":  translationEnabled,
@@ -51,6 +53,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			"ai_api_key":           aiAPIKey,
 			"ai_endpoint":          aiEndpoint,
 			"ai_model":             aiModel,
+			"ai_system_prompt":     aiSystemPrompt,
 			"auto_cleanup_enabled": autoCleanup,
 			"max_cache_size_mb":    maxCacheSize,
 			"max_article_age_days": maxArticleAge,
@@ -65,9 +68,10 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			"summary_enabled":      summaryEnabled,
 			"summary_length":       summaryLength,
 			"summary_provider":     summaryProvider,
-			"summary_ai_api_key":   summaryAIAPIKey,
-			"summary_ai_endpoint":  summaryAIEndpoint,
-			"summary_ai_model":     summaryAIModel,
+			"summary_ai_api_key":          summaryAIAPIKey,
+			"summary_ai_endpoint":         summaryAIEndpoint,
+			"summary_ai_model":            summaryAIModel,
+			"summary_ai_system_prompt":    summaryAISystemPrompt,
 		})
 	case http.MethodPost:
 		var req struct {
@@ -81,6 +85,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			AIAPIKey            string `json:"ai_api_key"`
 			AIEndpoint          string `json:"ai_endpoint"`
 			AIModel             string `json:"ai_model"`
+			AISystemPrompt      string `json:"ai_system_prompt"`
 			AutoCleanupEnabled  string `json:"auto_cleanup_enabled"`
 			MaxCacheSizeMB      string `json:"max_cache_size_mb"`
 			MaxArticleAgeDays   string `json:"max_article_age_days"`
@@ -97,6 +102,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			SummaryAIAPIKey     string `json:"summary_ai_api_key"`
 			SummaryAIEndpoint   string `json:"summary_ai_endpoint"`
 			SummaryAIModel      string `json:"summary_ai_model"`
+			SummaryAISystemPrompt string `json:"summary_ai_system_prompt"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,6 +127,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		h.DB.SetSetting("ai_api_key", req.AIAPIKey)
 		h.DB.SetSetting("ai_endpoint", req.AIEndpoint)
 		h.DB.SetSetting("ai_model", req.AIModel)
+		h.DB.SetSetting("ai_system_prompt", req.AISystemPrompt)
 
 		if req.AutoCleanupEnabled != "" {
 			h.DB.SetSetting("auto_cleanup_enabled", req.AutoCleanupEnabled)
@@ -172,6 +179,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		h.DB.SetSetting("summary_ai_api_key", req.SummaryAIAPIKey)
 		h.DB.SetSetting("summary_ai_endpoint", req.SummaryAIEndpoint)
 		h.DB.SetSetting("summary_ai_model", req.SummaryAIModel)
+		h.DB.SetSetting("summary_ai_system_prompt", req.SummaryAISystemPrompt)
 
 		if req.StartupOnBoot != "" {
 			// Get current value to check if it changed

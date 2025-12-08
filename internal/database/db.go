@@ -70,9 +70,9 @@ func (db *DB) Init() error {
 		settingsKeys := []string{
 			"update_interval", "translation_enabled", "target_language", "translation_provider",
 			"deepl_api_key", "baidu_app_id", "baidu_secret_key", "ai_api_key", "ai_endpoint", "ai_model",
-			"auto_cleanup_enabled", "max_cache_size_mb", "max_article_age_days", "language", "theme",
+			"ai_system_prompt", "auto_cleanup_enabled", "max_cache_size_mb", "max_article_age_days", "language", "theme",
 			"last_article_update", "show_hidden_articles", "default_view_mode", "summary_enabled", "summary_length",
-			"summary_provider", "summary_ai_api_key", "summary_ai_endpoint", "summary_ai_model",
+			"summary_provider", "summary_ai_api_key", "summary_ai_endpoint", "summary_ai_model", "summary_ai_system_prompt",
 			"shortcuts", "rules", "startup_on_boot",
 		}
 		for _, key := range settingsKeys {
@@ -134,7 +134,6 @@ func initSchema(db *sql.DB) error {
 		audio_url TEXT DEFAULT '',
 		video_url TEXT DEFAULT '',
 		translated_title TEXT,
-		content TEXT DEFAULT '',
 		published_at DATETIME,
 		is_read BOOLEAN DEFAULT 0,
 		is_favorite BOOLEAN DEFAULT 0,

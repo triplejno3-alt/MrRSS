@@ -3,8 +3,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PhCode, PhBookOpen } from '@phosphor-icons/vue';
 import { useModalClose } from '@/composables/ui/useModalClose';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
+const store = useAppStore();
 
 type FeedType = 'url' | 'script';
 
@@ -12,6 +14,8 @@ const feedType = ref<FeedType>('url');
 const title = ref('');
 const url = ref('');
 const category = ref('');
+const categorySelection = ref('');
+const showCustomCategory = ref(false);
 const scriptPath = ref('');
 const hideFromTimeline = ref(false);
 const isSubmitting = ref(false);
@@ -19,6 +23,28 @@ const isSubmitting = ref(false);
 // Available scripts from the scripts directory
 const availableScripts = ref<Array<{ name: string; path: string; type: string }>>([]);
 const scriptsDir = ref('');
+
+// Get unique categories from existing feeds
+const existingCategories = computed(() => {
+  const categories = new Set<string>();
+  store.feeds.forEach((feed) => {
+    if (feed.category && feed.category.trim() !== '') {
+      categories.add(feed.category);
+    }
+  });
+  return Array.from(categories).sort();
+});
+
+// Watch for category selection changes
+function handleCategoryChange() {
+  if (categorySelection.value === '__custom__') {
+    showCustomCategory.value = true;
+    category.value = '';
+  } else {
+    showCustomCategory.value = false;
+    category.value = categorySelection.value;
+  }
+}
 
 const emit = defineEmits<{
   close: [];
@@ -218,12 +244,35 @@ async function openScriptsFolder() {
             class="block mb-1 sm:mb-1.5 font-semibold text-xs sm:text-sm text-text-secondary"
             >{{ t('categoryOptional') }}</label
           >
-          <input
-            v-model="category"
-            type="text"
-            :placeholder="t('categoryPlaceholder')"
-            class="input-field"
-          />
+          <select
+            v-if="!showCustomCategory"
+            v-model="categorySelection"
+            @change="handleCategoryChange"
+            class="input-field w-full"
+          >
+            <option value="">{{ t('uncategorized') }}</option>
+            <option v-for="cat in existingCategories" :key="cat" :value="cat">{{ cat }}</option>
+            <option value="__custom__">{{ t('customCategory') }}</option>
+          </select>
+          <div v-else class="flex gap-2">
+            <input
+              v-model="category"
+              type="text"
+              :placeholder="t('enterCategoryName')"
+              class="input-field flex-1"
+              autofocus
+            />
+            <button
+              type="button"
+              @click="
+                showCustomCategory = false;
+                categorySelection = '';
+              "
+              class="px-3 py-2 text-xs sm:text-sm text-text-secondary hover:text-text-primary border border-border rounded-md hover:bg-bg-tertiary transition-colors"
+            >
+              {{ t('cancel') }}
+            </button>
+          </div>
         </div>
 
         <!-- Hide from Timeline Toggle -->

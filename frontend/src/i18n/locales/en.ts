@@ -176,6 +176,10 @@ const en: TranslationMessages = {
   aiModel: 'Model Name',
   aiModelDesc: 'AI model to use for translation',
   aiModelPlaceholder: 'gpt-4o-mini',
+  aiSystemPrompt: 'Custom System Prompt',
+  aiSystemPromptDesc: 'Custom system prompt for AI translation',
+  aiSystemPromptPlaceholder:
+    'Default: You are a translator. Translate the given text accurately. Output ONLY the translated text, nothing else.',
   targetLanguage: 'Target Language',
   targetLanguageDesc: 'Language to translate article titles to',
   language: 'Language',
@@ -198,6 +202,10 @@ const en: TranslationMessages = {
   summaryAiModel: 'Model Name',
   summaryAiModelDesc: 'AI model to use for summarization',
   summaryAiModelPlaceholder: 'gpt-4o-mini',
+  summaryAiSystemPrompt: 'Custom System Prompt',
+  summaryAiSystemPromptDesc: 'Custom system prompt for AI summarization',
+  summaryAiSystemPromptPlaceholder:
+    'Default: You are a summarizer. Generate a concise summary of the given text. Output ONLY the summary, nothing else.',
   summaryLength: 'Summary Length',
   summaryLengthDesc: 'Control the length of generated summaries',
   summaryLengthShort: 'Short',
@@ -312,6 +320,7 @@ const en: TranslationMessages = {
 
   // Prompts
   enterCategoryName: 'Enter new category name:',
+  customCategory: 'Custom Category...',
   moveFeeds: 'Move Feeds',
   move: 'Move',
 

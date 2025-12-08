@@ -75,6 +75,7 @@ export function useSettingsAutoSave(settings: Ref<SettingsData>) {
           ai_api_key: settings.value.ai_api_key ?? settingsDefaults.ai_api_key,
           ai_endpoint: settings.value.ai_endpoint ?? settingsDefaults.ai_endpoint,
           ai_model: settings.value.ai_model ?? settingsDefaults.ai_model,
+          ai_system_prompt: settings.value.ai_system_prompt ?? settingsDefaults.ai_system_prompt,
           auto_cleanup_enabled: (
             settings.value.auto_cleanup_enabled ?? settingsDefaults.auto_cleanup_enabled
           ).toString(),
@@ -104,6 +105,8 @@ export function useSettingsAutoSave(settings: Ref<SettingsData>) {
           summary_ai_endpoint:
             settings.value.summary_ai_endpoint ?? settingsDefaults.summary_ai_endpoint,
           summary_ai_model: settings.value.summary_ai_model ?? settingsDefaults.summary_ai_model,
+          summary_ai_system_prompt:
+            settings.value.summary_ai_system_prompt ?? settingsDefaults.summary_ai_system_prompt,
         }),
       });
 
