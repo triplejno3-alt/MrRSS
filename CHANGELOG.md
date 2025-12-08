@@ -5,6 +5,25 @@ All notable changes to MrRSS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.11] - 2025-12-08
+
+### Added
+
+- Supported selecting existing categories when adding or editing a new feed.
+- When playing audio or video in article content rendering mode, playback controls are now available.
+- Supported customizing the AI prompt for article summarization and translation.
+
+### Changed
+
+- Improved styles for article content rendering mode.
+
+### Fixed
+
+- Fixed the issue where some feeds can not be handled due to invalid styles in RSS XML.
+- Fixed the issue where inline elements (e.g. code, formulas) were not handled correctly in translation.
+- Fixed the issue where toast notifications not supporting dark mode caused visibility problems.
+- Fixed the issue related to importing OPML files.
+
 ## [1.2.10] - 2025-12-07
 
 ### Added
