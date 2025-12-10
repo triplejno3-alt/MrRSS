@@ -225,19 +225,23 @@ async function translateContentParagraphs(content: string) {
       continue;
     }
 
-    // Extract text with placeholders for inline elements (formulas, code, images)
-    const { text: textWithPlaceholders, preservedElements } = extractTextWithPlaceholders(htmlEl);
+    // Extract text with placeholders for inline elements (formulas, code, images) and hyperlinks
+    const {
+      text: textWithPlaceholders,
+      preservedElements,
+      hyperlinks,
+    } = extractTextWithPlaceholders(htmlEl);
 
     if (!textWithPlaceholders || textWithPlaceholders.length < 2) continue;
 
-    // Translate the text (with placeholders)
+    // Translate the text (with placeholders and link markers)
     const translatedText = await translateText(textWithPlaceholders);
 
     // Skip if translation is same as original or empty
     if (!translatedText || translatedText === textWithPlaceholders) continue;
 
-    // Restore preserved elements in the translated text
-    const translatedHTML = restorePreservedElements(translatedText, preservedElements);
+    // Restore preserved elements and hyperlinks in the translated text
+    const translatedHTML = restorePreservedElements(translatedText, preservedElements, hyperlinks);
 
     // Determine how to insert translation based on element type
     const tagName = htmlEl.tagName;

@@ -40,10 +40,24 @@ const PRESERVED_SELECTORS = [
 const PLACEHOLDER_PREFIX = '⟦';
 const PLACEHOLDER_SUFFIX = '⟧';
 
+/**
+ * Special markers for hyperlinks (different from preserved elements)
+ * These help us track link boundaries in translated text
+ */
+const LINK_START_PREFIX = '⟪';
+const LINK_END_SUFFIX = '⟫';
+
 interface PreservedElement {
   placeholder: string;
   outerHTML: string;
   element: Element;
+}
+
+interface HyperlinkInfo {
+  startMarker: string;
+  endMarker: string;
+  href: string;
+  attributes: Record<string, string>;
 }
 
 /**
@@ -53,13 +67,43 @@ interface PreservedElement {
 export function extractTextWithPlaceholders(element: HTMLElement): {
   text: string;
   preservedElements: PreservedElement[];
+  hyperlinks: HyperlinkInfo[];
 } {
   const preservedElements: PreservedElement[] = [];
+  const hyperlinks: HyperlinkInfo[] = [];
 
   // Clone the element to avoid modifying the original
   const clone = element.cloneNode(true) as HTMLElement;
 
-  // Find all elements that should be preserved
+  // First, handle hyperlinks specially
+  let linkIndex = 0;
+  const links = clone.querySelectorAll('a');
+  links.forEach((link) => {
+    const startMarker = `${LINK_START_PREFIX}${linkIndex}`;
+    const endMarker = `${linkIndex}${LINK_END_SUFFIX}`;
+
+    // Store hyperlink information
+    const attributes: Record<string, string> = {};
+    Array.from(link.attributes).forEach((attr) => {
+      attributes[attr.name] = attr.value;
+    });
+
+    hyperlinks.push({
+      startMarker,
+      endMarker,
+      href: link.getAttribute('href') || '',
+      attributes,
+    });
+
+    // Replace the link with markers around its text content
+    const textContent = link.textContent || '';
+    const markedText = document.createTextNode(`${startMarker}${textContent}${endMarker}`);
+    link.parentNode?.replaceChild(markedText, link);
+
+    linkIndex++;
+  });
+
+  // Then handle other preserved elements (excluding hyperlinks)
   const elementsToPreserve = clone.querySelectorAll(PRESERVED_SELECTORS.join(','));
 
   let index = 0;
@@ -90,30 +134,84 @@ export function extractTextWithPlaceholders(element: HTMLElement): {
     index++;
   });
 
-  // Get the text content with placeholders
+  // Get the text content with placeholders and link markers
   const text = clone.textContent?.trim() || '';
 
-  return { text, preservedElements };
+  return { text, preservedElements, hyperlinks };
 }
 
 /**
- * Restore preserved elements in the translated text
- * Returns HTML string with preserved elements restored
+ * Restore preserved elements and hyperlinks in the translated text
+ * Returns HTML string with preserved elements and hyperlinks restored
  */
 export function restorePreservedElements(
   translatedText: string,
-  preservedElements: PreservedElement[]
+  preservedElements: PreservedElement[],
+  hyperlinks: HyperlinkInfo[] = []
 ): string {
   let result = translatedText;
 
-  // Escape HTML in the translated text (except placeholders)
+  // First, restore hyperlinks by converting markers to HTML
+  for (let i = 0; i < hyperlinks.length; i++) {
+    const { startMarker, endMarker, attributes } = hyperlinks[i];
+
+    // Find the link text between markers
+    const startPattern = startMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const endPattern = endMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const linkRegex = new RegExp(`${startPattern}(.*?)${endPattern}`, 's');
+
+    const match = result.match(linkRegex);
+    if (match) {
+      const linkText = match[1];
+      // Use a unique placeholder that won't be escaped
+      const uniqueId = `__HYPERLINK_${i}__`;
+      result = result.replace(linkRegex, uniqueId);
+
+      // Store the link HTML for later restoration
+      if (!result.includes('__HYPERLINK_MAP__')) {
+        result = '__HYPERLINK_MAP__' + JSON.stringify({}) + '__HYPERLINK_MAP__' + result;
+      }
+
+      // Build attribute string
+      const attrString = Object.entries(attributes)
+        .map(([key, value]) => `${key}="${value.replace(/"/g, '&quot;')}"`)
+        .join(' ');
+      const linkHTML = `<a ${attrString}>${linkText}</a>`;
+
+      // Store in map
+      const mapMatch = result.match(/__HYPERLINK_MAP__(.*?)__HYPERLINK_MAP__/);
+      if (mapMatch) {
+        const map = JSON.parse(mapMatch[1]);
+        map[uniqueId] = linkHTML;
+        result = result.replace(
+          /__HYPERLINK_MAP__.*?__HYPERLINK_MAP__/,
+          `__HYPERLINK_MAP__${JSON.stringify(map)}__HYPERLINK_MAP__`
+        );
+      }
+    }
+  }
+
+  // Extract hyperlink map if it exists
+  const mapMatch = result.match(/__HYPERLINK_MAP__(.*?)__HYPERLINK_MAP__/);
+  let hyperlinkMap: Record<string, string> = {};
+  if (mapMatch) {
+    hyperlinkMap = JSON.parse(mapMatch[1]);
+    result = result.replace(/__HYPERLINK_MAP__.*?__HYPERLINK_MAP__/, '');
+  }
+
+  // Escape HTML in the translated text (except our placeholders)
   result = result
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-  // Restore each preserved element
+  // Restore hyperlinks from map
+  for (const [placeholder, linkHTML] of Object.entries(hyperlinkMap)) {
+    result = result.replace(placeholder, linkHTML);
+  }
+
+  // Then restore other preserved elements
   for (const { placeholder, outerHTML } of preservedElements) {
     // The placeholder might have been slightly modified by translation
     // Try exact match first
@@ -141,6 +239,9 @@ export function hasOnlyPreservedContent(element: HTMLElement): boolean {
   // Remove all preserved elements
   const elementsToRemove = clone.querySelectorAll(PRESERVED_SELECTORS.join(','));
   elementsToRemove.forEach((el) => el.remove());
+
+  // Also remove hyperlinks to check for translatable text
+  clone.querySelectorAll('a').forEach((el) => el.remove());
 
   // Check if there's any meaningful text left
   const remainingText = clone.textContent?.trim() || '';
