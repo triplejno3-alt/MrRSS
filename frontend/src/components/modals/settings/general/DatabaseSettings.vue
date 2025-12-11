@@ -60,7 +60,10 @@ async function cleanMediaCache() {
 }
 
 onMounted(() => {
-  fetchMediaCacheSize();
+  // Only fetch cache size if media cache is enabled
+  if (settings.media_cache_enabled) {
+    fetchMediaCacheSize();
+  }
 });
 </script>
 

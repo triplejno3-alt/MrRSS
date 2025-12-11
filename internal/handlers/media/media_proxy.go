@@ -2,14 +2,30 @@ package media
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"MrRSS/internal/cache"
 	"MrRSS/internal/handlers/core"
 	"MrRSS/internal/utils"
 )
+
+// validateMediaURL validates that the URL is HTTP/HTTPS and properly formatted
+func validateMediaURL(urlStr string) error {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return errors.New("invalid URL format")
+	}
+
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("URL must use HTTP or HTTPS")
+	}
+
+	return nil
+}
 
 // HandleMediaProxy serves cached media or downloads and caches it
 func HandleMediaProxy(h *core.Handler, w http.ResponseWriter, r *http.Request) {
@@ -29,6 +45,12 @@ func HandleMediaProxy(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	mediaURL := r.URL.Query().Get("url")
 	if mediaURL == "" {
 		http.Error(w, "Missing url parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Validate mediaURL (must be HTTP/HTTPS and valid format)
+	if err := validateMediaURL(mediaURL); err != nil {
+		http.Error(w, "Invalid url parameter: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 

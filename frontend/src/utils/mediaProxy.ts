@@ -2,6 +2,10 @@
  * Media proxy utilities for handling anti-hotlinking and caching
  */
 
+// Cache for media cache enabled setting to avoid repeated API calls
+let mediaCacheEnabledCache: boolean | null = null;
+let mediaCachePromise: Promise<boolean> | null = null;
+
 /**
  * Convert a media URL to use the proxy endpoint
  * @param url Original media URL
@@ -36,20 +40,47 @@ export function getProxiedMediaUrl(url: string, referer?: string): string {
 }
 
 /**
- * Check if media caching is enabled
+ * Check if media caching is enabled (with caching to avoid repeated API calls)
  * @returns Promise<boolean>
  */
 export async function isMediaCacheEnabled(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/settings');
-    if (response.ok) {
-      const settings = await response.json();
-      return settings.media_cache_enabled === 'true' || settings.media_cache_enabled === true;
-    }
-  } catch (error) {
-    console.error('Failed to check media cache status:', error);
+  // Return cached value if available
+  if (mediaCacheEnabledCache !== null) {
+    return mediaCacheEnabledCache;
   }
-  return false;
+
+  // If a request is already in flight, wait for it
+  if (mediaCachePromise) {
+    return mediaCachePromise;
+  }
+
+  // Start a new request
+  mediaCachePromise = (async () => {
+    try {
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        const settings = await response.json();
+        mediaCacheEnabledCache =
+          settings.media_cache_enabled === 'true' || settings.media_cache_enabled === true;
+        return mediaCacheEnabledCache;
+      }
+    } catch (error) {
+      console.error('Failed to check media cache status:', error);
+    }
+    mediaCacheEnabledCache = false;
+    return false;
+  })();
+
+  const result = await mediaCachePromise;
+  mediaCachePromise = null; // Clear the promise after completion
+  return result;
+}
+
+/**
+ * Clear the media cache enabled cache (call this when settings change)
+ */
+export function clearMediaCacheEnabledCache(): void {
+  mediaCacheEnabledCache = null;
 }
 
 /**
@@ -61,9 +92,10 @@ export async function isMediaCacheEnabled(): Promise<boolean> {
 export function proxyImagesInHtml(html: string, referer?: string): string {
   if (!html) return html;
 
-  // Replace img src attributes
-  return html.replace(/<img([^>]+)src="([^"]+)"/gi, (match, attrs, src) => {
+  // Replace img src attributes - handles double quotes, single quotes, and unquoted values
+  return html.replace(/<img([^>]+)src\s*=\s*(['"]?)([^"'\s>]+)\2/gi, (match, attrs, quote, src) => {
     const proxiedUrl = getProxiedMediaUrl(src, referer);
+    // Always output with double quotes for consistency
     return `<img${attrs}src="${proxiedUrl}"`;
   });
 }

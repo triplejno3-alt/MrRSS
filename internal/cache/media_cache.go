@@ -31,25 +31,41 @@ func NewMediaCache(cacheDir string) (*MediaCache, error) {
 	}, nil
 }
 
-// GetCachedPath returns the cached file path for a given URL
+// GetCachedPath returns the cached file path for a given URL (using extension from URL)
 func (mc *MediaCache) GetCachedPath(url string) string {
 	hash := hashURL(url)
 	ext := getExtensionFromURL(url)
 	return filepath.Join(mc.cacheDir, hash+ext)
 }
 
-// Exists checks if a media file is already cached
+// findCachedFile returns the path to a cached file for the given URL, regardless of extension.
+func (mc *MediaCache) findCachedFile(url string) (string, bool) {
+	hash := hashURL(url)
+	pattern := filepath.Join(mc.cacheDir, hash+".*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil || len(matches) == 0 {
+		// Try also the case where there is no extension (rare, but possible)
+		noExtPath := filepath.Join(mc.cacheDir, hash)
+		if _, err := os.Stat(noExtPath); err == nil {
+			return noExtPath, true
+		}
+		return "", false
+	}
+	// If multiple matches, pick the first (shouldn't happen unless cache is dirty)
+	return matches[0], true
+}
+
+// Exists checks if a media file is already cached (regardless of extension)
 func (mc *MediaCache) Exists(url string) bool {
-	path := mc.GetCachedPath(url)
-	_, err := os.Stat(path)
-	return err == nil
+	_, found := mc.findCachedFile(url)
+	return found
 }
 
 // Get retrieves cached media or downloads it if not cached
 func (mc *MediaCache) Get(url, referer string) ([]byte, string, error) {
 	// Check if already cached
-	cachedPath := mc.GetCachedPath(url)
-	if mc.Exists(url) {
+	cachedPath, found := mc.findCachedFile(url)
+	if found {
 		data, err := os.ReadFile(cachedPath)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to read cached file: %w", err)
