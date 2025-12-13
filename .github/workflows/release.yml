@@ -32,7 +32,8 @@ jobs:
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
           
           # Check if this is a pre-release (alpha or beta)
-          if [[ "$VERSION" =~ -alpha|-beta ]]; then
+          # Match versions like 1.2.3-alpha, 1.2.3-alpha.1, 1.2.3-beta, 1.2.3-beta.2
+          if [[ "$VERSION" =~ -(alpha|beta)($|\.) ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
             echo "This is a pre-release version: $VERSION"
           else

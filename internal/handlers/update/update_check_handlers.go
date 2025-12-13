@@ -94,13 +94,18 @@ func HandleCheckUpdates(h *core.Handler, w http.ResponseWriter, r *http.Request)
 	}
 
 	// Find the latest stable release (not prerelease, not draft)
+	// Compare versions to ensure we get the actual latest, not just the first one
 	var release Release
+	var latestVersion string
 	found := false
 	for _, r := range releases {
 		if !r.Prerelease && !r.Draft {
-			release = r
-			found = true
-			break
+			version := strings.TrimPrefix(r.TagName, "v")
+			if !found || compareVersions(version, latestVersion) > 0 {
+				release = r
+				latestVersion = version
+				found = true
+			}
 		}
 	}
 
@@ -113,8 +118,7 @@ func HandleCheckUpdates(h *core.Handler, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Remove 'v' prefix if present for comparison
-	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	// Check if there's an update available
 	hasUpdate := compareVersions(latestVersion, currentVersion) > 0
 
 	// Find the appropriate download URL based on platform
