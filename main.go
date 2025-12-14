@@ -58,6 +58,22 @@ type windowState struct {
 	valid  atomic.Bool
 }
 
+type atomicContext struct {
+	value atomic.Value // stores context.Context
+}
+
+func (ac *atomicContext) Store(ctx context.Context) {
+	ac.value.Store(ctx)
+}
+
+func (ac *atomicContext) Load() context.Context {
+	val := ac.value.Load()
+	if val == nil {
+		return nil
+	}
+	return val.(context.Context)
+}
+
 // getTrayIcon returns the appropriate icon bytes for the current platform
 func getTrayIcon() []byte {
 	// Windows requires .ico format, other platforms use .png
@@ -283,6 +299,9 @@ func main() {
 	log.Println("Starting background scheduler...")
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 
+	// Store the app context for single instance callback (thread-safe)
+	var appCtx atomicContext
+
 	log.Println("Starting Wails...")
 	err = wails.Run(&options.App{
 		Title:    "MrRSS",
@@ -294,6 +313,45 @@ func main() {
 			Handler: combinedHandler,
 		},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "com.mrrss.app",
+			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
+				log.Printf("Second instance detected, bringing window to front")
+				ctx := appCtx.Load()
+				if ctx != nil {
+					// Restore window state if it was stored (minimized to tray)
+					if lastWindowState.valid.Load() {
+						width := lastWindowState.width
+						height := lastWindowState.height
+						x := lastWindowState.x
+						y := lastWindowState.y
+
+						// Ensure minimum window size
+						if width < 400 {
+							width = 1024
+						}
+						if height < 300 {
+							height = 768
+						}
+
+						// Ensure window is at least partially on screen
+						if x < -1000 || x > 3000 {
+							x = 100
+						}
+						if y < -1000 || y > 3000 {
+							y = 100
+						}
+
+						log.Printf("Restoring window state: x=%d, y=%d, width=%d, height=%d", x, y, width, height)
+						runtime.WindowSetSize(ctx, width, height)
+						runtime.WindowSetPosition(ctx, x, y)
+					}
+					// Show and unminimize the window
+					runtime.WindowShow(ctx)
+					runtime.WindowUnminimise(ctx)
+				}
+			},
+		},
 		OnShutdown: func(ctx context.Context) {
 			log.Println("Shutting down...")
 
@@ -324,6 +382,8 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			log.Println("App started")
+			// Store context for single instance callback (thread-safe)
+			appCtx.Store(ctx)
 
 			// Try to restore window state from database
 			restoredFromDB := false
