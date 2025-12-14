@@ -1,0 +1,202 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { PhNetworkX, PhArrowClockwise } from '@phosphor-icons/vue';
+import type { NetworkInfo } from '@/types/settings';
+
+const { t } = useI18n();
+
+const networkInfo = ref<NetworkInfo>({
+  speed_level: 'medium',
+  bandwidth_mbps: 0,
+  latency_ms: 0,
+  max_concurrency: 5,
+  detection_time: '',
+  detection_success: false,
+});
+
+const isDetecting = ref(false);
+const errorMessage = ref('');
+
+async function loadNetworkInfo() {
+  try {
+    const response = await fetch('/api/network/info');
+    if (response.ok) {
+      const data = await response.json();
+      networkInfo.value = data;
+    }
+  } catch (error) {
+    console.error('Failed to load network info:', error);
+  }
+}
+
+async function detectNetwork() {
+  isDetecting.value = true;
+  errorMessage.value = '';
+
+  try {
+    const response = await fetch('/api/network/detect', {
+      method: 'POST',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      networkInfo.value = data;
+
+      if (!data.detection_success) {
+        errorMessage.value = t('networkDetectionFailed');
+      } else {
+        window.showToast(t('networkDetectionComplete'), 'success');
+      }
+    } else {
+      errorMessage.value = t('networkDetectionFailed');
+    }
+  } catch (error) {
+    console.error('Network detection error:', error);
+    errorMessage.value = t('networkDetectionFailed');
+  } finally {
+    isDetecting.value = false;
+  }
+}
+
+function formatTime(timeStr: string): string {
+  if (!timeStr) return '';
+  const date = new Date(timeStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return t('daysAgo', { count: days });
+  } else if (hours > 0) {
+    return t('hoursAgo', { count: hours });
+  } else if (minutes > 0) {
+    return t('minutesAgo', { count: minutes });
+  } else {
+    return t('justNow');
+  }
+}
+
+onMounted(() => {
+  loadNetworkInfo();
+});
+</script>
+
+<template>
+  <div class="setting-group">
+    <label
+      class="font-semibold mb-2 sm:mb-3 text-text-secondary uppercase text-xs tracking-wider flex items-center gap-2"
+    >
+      <PhNetworkX :size="14" class="sm:w-4 sm:h-4" />
+      {{ t('networkSettings') }}
+    </label>
+
+    <div class="text-xs sm:text-sm text-text-secondary mb-3 sm:mb-4">
+      {{ t('networkSettingsDescription') }}
+    </div>
+
+    <!-- Network Status Display -->
+    <div
+      class="flex flex-col sm:flex-row sm:items-stretch sm:justify-between gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg bg-bg-secondary border border-border"
+    >
+      <!-- Top/Bottom: Speed and Latency Boxes -->
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+        <!-- Bandwidth Box -->
+        <div
+          class="flex flex-col gap-2 p-3 rounded-lg bg-bg-primary border border-border w-full sm:min-w-[120px]"
+        >
+          <span class="text-sm text-text-secondary text-left">{{ t('bandwidthLabel') }}</span>
+          <div class="flex items-baseline gap-1">
+            <span class="text-xl sm:text-2xl font-bold text-text-primary">{{
+              networkInfo.bandwidth_mbps.toFixed(1)
+            }}</span>
+            <span class="text-sm text-text-secondary">{{ t('bandwidthMbps') }}</span>
+          </div>
+        </div>
+
+        <!-- Latency Box -->
+        <div
+          class="flex flex-col gap-2 p-3 rounded-lg bg-bg-primary border border-border w-full sm:min-w-[120px]"
+        >
+          <span class="text-sm text-text-secondary text-left">{{ t('latencyLabel') }}</span>
+          <div class="flex items-baseline gap-1">
+            <span class="text-xl sm:text-2xl font-bold text-text-primary">{{
+              networkInfo.latency_ms
+            }}</span>
+            <span class="text-sm text-text-secondary">{{ t('latencyMs') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom/Right: Button and Detection Time -->
+      <div class="flex flex-col sm:justify-between flex-1 gap-2 sm:gap-0">
+        <div class="flex justify-center sm:justify-end">
+          <button class="btn-primary" :disabled="isDetecting" @click="detectNetwork">
+            <PhArrowClockwise
+              :size="16"
+              :class="{ 'animate-spin': isDetecting, 'sm:w-5 sm:h-5': true }"
+            />
+            <span>{{ isDetecting ? t('detecting') : t('reDetectNetwork') }}</span>
+          </button>
+        </div>
+
+        <div
+          v-if="networkInfo.detection_time"
+          class="flex items-center justify-center sm:justify-end gap-2"
+        >
+          <span class="text-xs text-text-secondary">{{ t('lastDetection') }}:</span>
+          <span class="text-xs text-accent font-medium">{{
+            formatTime(networkInfo.detection_time)
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      v-if="errorMessage"
+      class="bg-red-500/10 border border-red-500/30 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-red-500 mt-3"
+    >
+      {{ errorMessage }}
+    </div>
+  </div>
+</template>
+
+<style scoped>
+@reference "../../../../style.css";
+
+.btn-primary {
+  @apply bg-accent text-white border-none px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg cursor-pointer flex items-center gap-1 sm:gap-2 font-medium hover:bg-accent-hover transition-colors text-sm sm:text-base;
+}
+
+.btn-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply px-3 py-1.5 bg-bg-primary border border-border text-text-primary rounded-md cursor-pointer font-medium hover:bg-bg-secondary transition-all text-sm;
+}
+
+.btn-secondary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.setting-group {
+  @apply mb-4 sm:mb-6;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+</style>

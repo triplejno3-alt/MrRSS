@@ -45,7 +45,22 @@ export interface SettingsData {
   proxy_password: string;
   google_translate_endpoint: string;
   show_article_preview_images: boolean;
+  network_speed: string;
+  network_bandwidth_mbps: string;
+  network_latency_ms: string;
+  max_concurrent_refreshes: string;
+  last_network_test: string;
   [key: string]: unknown; // Allow additional properties
+}
+
+export interface NetworkInfo {
+  speed_level: 'slow' | 'medium' | 'fast';
+  bandwidth_mbps: number;
+  latency_ms: number;
+  max_concurrency: number;
+  detection_time: string;
+  detection_success: boolean;
+  error_message?: string;
 }
 
 export interface UpdateInfo {
@@ -67,4 +82,4 @@ export interface InstallResponse {
   success: boolean;
 }
 
-export type TabName = 'general' | 'feeds' | 'rules' | 'shortcuts' | 'about';
+export type TabName = 'general' | 'feeds' | 'rules' | 'network' | 'shortcuts' | 'about';

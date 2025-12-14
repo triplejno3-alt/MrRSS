@@ -53,6 +53,11 @@ export function useSettings() {
     proxy_password: settingsDefaults.proxy_password,
     google_translate_endpoint: settingsDefaults.google_translate_endpoint,
     show_article_preview_images: settingsDefaults.show_article_preview_images,
+    network_speed: settingsDefaults.network_speed,
+    network_bandwidth_mbps: settingsDefaults.network_bandwidth_mbps,
+    network_latency_ms: settingsDefaults.network_latency_ms,
+    max_concurrent_refreshes: settingsDefaults.max_concurrent_refreshes,
+    last_network_test: settingsDefaults.last_network_test,
   } as SettingsData);
 
   /**
@@ -112,6 +117,13 @@ export function useSettings() {
         google_translate_endpoint:
           data.google_translate_endpoint || settingsDefaults.google_translate_endpoint,
         show_article_preview_images: data.show_article_preview_images === 'true',
+        network_speed: data.network_speed || settingsDefaults.network_speed,
+        network_bandwidth_mbps:
+          data.network_bandwidth_mbps || settingsDefaults.network_bandwidth_mbps,
+        network_latency_ms: data.network_latency_ms || settingsDefaults.network_latency_ms,
+        max_concurrent_refreshes:
+          data.max_concurrent_refreshes || settingsDefaults.max_concurrent_refreshes,
+        last_network_test: data.last_network_test || settingsDefaults.last_network_test,
       } as SettingsData;
 
       return settings.value;

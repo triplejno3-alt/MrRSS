@@ -366,6 +366,9 @@ export interface TranslationMessages {
   deleteRule: string;
   noRules: string;
   noRulesHint: string;
+
+  // Network
+  network: string;
   ruleEnabled: string;
   ruleDisabled: string;
   ruleCondition: string;
@@ -420,6 +423,19 @@ export interface TranslationMessages {
   advancedSettings: string;
   showAdvancedSettings: string;
   hideAdvancedSettings: string;
+
+  // Network Settings
+  networkSettings: string;
+  networkSettingsDescription: string;
+  bandwidthLabel: string;
+  latencyLabel: string;
+  bandwidthMbps: string;
+  latencyMs: string;
+  lastDetection: string;
+  reDetectNetwork: string;
+  detecting: string;
+  networkDetectionComplete: string;
+  networkDetectionFailed: string;
 }
 
 export type SupportedLocale = 'en-US' | 'zh-CN';

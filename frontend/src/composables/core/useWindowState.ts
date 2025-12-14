@@ -1,12 +1,4 @@
 import { onMounted, onUnmounted } from 'vue';
-import {
-  WindowGetPosition,
-  WindowGetSize,
-  WindowSetPosition,
-  WindowSetSize,
-  WindowIsMaximised,
-  WindowMaximise,
-} from '../../wailsjs/wailsjs/runtime/runtime';
 
 interface WindowState {
   x: number;
@@ -22,6 +14,11 @@ export function useWindowState() {
 
   /**
    * Load and restore window state from database
+   *
+   * NOTE: Actual window restoration happens in main.go during OnStartup.
+   * This frontend function is kept for API compatibility and logging.
+   * The window state is restored by the Go backend which has access to
+   * Wails runtime context.
    */
   async function restoreWindowState() {
     try {
@@ -34,51 +31,15 @@ export function useWindowState() {
       }
 
       const data = await response.json();
-
-      // Parse values with defaults
-      const x = parseInt(data.x || '0');
-      const y = parseInt(data.y || '0');
-      const width = parseInt(data.width || '1024');
-      const height = parseInt(data.height || '768');
-      const maximized = data.maximized === 'true';
-
-      // Only restore if we have valid saved values (not defaults)
-      // Check for actual saved values by looking at the raw data
-      const hasValidState = data.x && data.y && data.width && data.height;
-
-      if (hasValidState) {
-        // Validate size bounds (minimum and reasonable maximum)
-        const validWidth = Math.max(400, Math.min(width, 3840));
-        const validHeight = Math.max(300, Math.min(height, 2160));
-
-        // Validate position (ensure window is at least partially visible)
-        // Allow negative values for multi-monitor setups
-        const validX = Math.max(-1000, Math.min(x, 3000));
-        const validY = Math.max(-1000, Math.min(y, 3000));
-
-        // First set size and position
-        await WindowSetSize(validWidth, validHeight);
-        await WindowSetPosition(validX, validY);
-
-        // Then handle maximized state
-        if (maximized) {
-          await WindowMaximise();
-        }
-
-        console.log('Window state restored:', {
-          x: validX,
-          y: validY,
-          width: validWidth,
-          height: validHeight,
-          maximized,
-        });
+      if (data.width && data.height) {
+        console.log('Window state loaded from database:', data);
       } else {
-        console.log('No valid window state found, using defaults');
+        console.log('No saved window state found');
       }
     } catch (error) {
-      console.error('Error restoring window state:', error);
+      console.error('Error loading window state:', error);
     } finally {
-      // Wait a bit before allowing saves to prevent immediately overwriting restored state
+      // Wait a bit before allowing saves
       setTimeout(() => {
         isRestoringState = false;
       }, 1000);
@@ -95,27 +56,32 @@ export function useWindowState() {
     }
 
     try {
-      const [position, size, maximized] = await Promise.all([
-        WindowGetPosition(),
-        WindowGetSize(),
-        WindowIsMaximised(),
-      ]);
-
+      // Use browser window properties to get approximate state
+      // Note: These values may not be 100% accurate due to browser limitations,
+      // but they provide a reasonable approximation for window state persistence
       const state: WindowState = {
-        x: position.x,
-        y: position.y,
-        width: size.w,
-        height: size.h,
-        maximized,
+        x: window.screenX || 0,
+        y: window.screenY || 0,
+        width: window.innerWidth || 1024,
+        height: window.innerHeight || 768,
+        maximized: false, // Browser can't reliably detect maximized state
       };
 
-      await fetch('/api/window/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state),
-      });
+      // Only save if values are reasonable
+      if (
+        state.width >= 400 &&
+        state.height >= 300 &&
+        state.width <= 4000 &&
+        state.height <= 3000
+      ) {
+        await fetch('/api/window/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state),
+        });
 
-      console.log('Window state saved:', state);
+        console.log('Window state saved:', state);
+      }
     } catch (error) {
       console.error('Error saving window state:', error);
     }
@@ -175,23 +141,22 @@ export function useWindowState() {
     let cleanup: (() => void) | null = null;
 
     onMounted(async () => {
-      // Wait a bit for the window to be ready
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      console.log('Window state management initialized');
 
-      // Restore saved state
+      // Load state for logging
       await restoreWindowState();
 
-      // Setup listeners for future changes
+      // Setup event listeners to save window state changes
       cleanup = setupListeners();
-
-      // Save state on beforeunload
-      window.addEventListener('beforeunload', saveWindowState);
     });
 
     onUnmounted(() => {
-      window.removeEventListener('beforeunload', saveWindowState);
+      // Cleanup event listeners
       if (cleanup) {
         cleanup();
+      }
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
       }
     });
   }

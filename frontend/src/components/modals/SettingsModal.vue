@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { ref, onMounted, type Ref } from 'vue';
 import GeneralTab from './settings/general/GeneralTab.vue';
 import FeedsTab from './settings/feeds/FeedsTab.vue';
+import NetworkTab from './settings/network/NetworkTab.vue';
 import ShortcutsTab from './settings/shortcuts/ShortcutsTab.vue';
 import RulesTab from './settings/rules/RulesTab.vue';
 import AboutTab from './settings/about/AboutTab.vue';
@@ -108,6 +109,12 @@ function handleDiscoverAll() {
           {{ t('rules') }}
         </button>
         <button
+          :class="['tab-btn', activeTab === 'network' ? 'active' : '']"
+          @click="activeTab = 'network'"
+        >
+          {{ t('network') }}
+        </button>
+        <button
           :class="['tab-btn', activeTab === 'shortcuts' ? 'active' : '']"
           @click="activeTab = 'shortcuts'"
         >
@@ -139,6 +146,12 @@ function handleDiscoverAll() {
           @batch-delete="handleBatchDelete"
           @batch-move="handleBatchMove"
           @discover-all="handleDiscoverAll"
+        />
+
+        <NetworkTab
+          v-if="activeTab === 'network'"
+          :settings="settings"
+          @update:settings="settings = $event"
         />
 
         <RulesTab

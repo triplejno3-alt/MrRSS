@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -24,6 +26,7 @@ import (
 	discovery "MrRSS/internal/handlers/discovery"
 	feedhandlers "MrRSS/internal/handlers/feed"
 	media "MrRSS/internal/handlers/media"
+	networkhandlers "MrRSS/internal/handlers/network"
 	opml "MrRSS/internal/handlers/opml"
 	rules "MrRSS/internal/handlers/rules"
 	script "MrRSS/internal/handlers/script"
@@ -32,6 +35,7 @@ import (
 	translationhandlers "MrRSS/internal/handlers/translation"
 	update "MrRSS/internal/handlers/update"
 	window "MrRSS/internal/handlers/window"
+	"MrRSS/internal/network"
 	"MrRSS/internal/translation"
 	"MrRSS/internal/tray"
 	"MrRSS/internal/utils"
@@ -182,6 +186,8 @@ func main() {
 	apiMux.HandleFunc("/api/media/info", func(w http.ResponseWriter, r *http.Request) { media.HandleMediaCacheInfo(h, w, r) })
 	apiMux.HandleFunc("/api/window/state", func(w http.ResponseWriter, r *http.Request) { window.HandleGetWindowState(h, w, r) })
 	apiMux.HandleFunc("/api/window/save", func(w http.ResponseWriter, r *http.Request) { window.HandleSaveWindowState(h, w, r) })
+	apiMux.HandleFunc("/api/network/detect", func(w http.ResponseWriter, r *http.Request) { networkhandlers.HandleDetectNetwork(h, w, r) })
+	apiMux.HandleFunc("/api/network/info", func(w http.ResponseWriter, r *http.Request) { networkhandlers.HandleGetNetworkInfo(h, w, r) })
 
 	// Static Files
 	log.Println("Setting up static files...")
@@ -211,8 +217,37 @@ func main() {
 			runtime.Quit(ctx)
 		}, func() {
 			if lastWindowState.valid.Load() {
-				runtime.WindowSetSize(ctx, lastWindowState.width, lastWindowState.height)
-				runtime.WindowSetPosition(ctx, lastWindowState.x, lastWindowState.y)
+				// Validate window state before restoring
+				width := lastWindowState.width
+				height := lastWindowState.height
+				x := lastWindowState.x
+				y := lastWindowState.y
+
+				// Ensure minimum window size
+				if width < 400 {
+					width = 1024
+				}
+				if height < 300 {
+					height = 768
+				}
+
+				// Ensure window is at least partially on screen
+				// Allow some negative values for multi-monitor setups, but not extreme ones
+				if x < -1000 || x > 3000 {
+					x = 100
+				}
+				if y < -1000 || y > 3000 {
+					y = 100
+				}
+
+				log.Printf("Restoring window state: x=%d, y=%d, width=%d, height=%d", x, y, width, height)
+				runtime.WindowSetSize(ctx, width, height)
+				runtime.WindowSetPosition(ctx, x, y)
+			} else {
+				// No valid state, use safe defaults
+				log.Println("No valid window state, using defaults")
+				runtime.WindowSetSize(ctx, 1024, 768)
+				runtime.WindowCenter(ctx)
 			}
 			runtime.WindowShow(ctx)
 			runtime.WindowUnminimise(ctx)
@@ -225,13 +260,23 @@ func main() {
 		}
 
 		w, h := runtime.WindowGetSize(ctx)
-		lastWindowState.width = w
-		lastWindowState.height = h
-
 		x, y := runtime.WindowGetPosition(ctx)
-		lastWindowState.x = x
-		lastWindowState.y = y
-		lastWindowState.valid.Store(true)
+
+		// Only store state if it's valid (reasonable size and position)
+		if w >= 400 && h >= 300 && w <= 4000 && h <= 3000 {
+			if x > -1000 && x < 3000 && y > -1000 && y < 3000 {
+				lastWindowState.width = w
+				lastWindowState.height = h
+				lastWindowState.x = x
+				lastWindowState.y = y
+				lastWindowState.valid.Store(true)
+				log.Printf("Stored window state: x=%d, y=%d, width=%d, height=%d", x, y, w, h)
+			} else {
+				log.Printf("Window position invalid (x=%d, y=%d), not storing", x, y)
+			}
+		} else {
+			log.Printf("Window size invalid (width=%d, height=%d), not storing", w, h)
+		}
 	}
 
 	// Start background scheduler
@@ -280,9 +325,75 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			log.Println("App started")
 
+			// Try to restore window state from database
+			restoredFromDB := false
+			if x, err := db.GetSetting("window_x"); err == nil && x != "" {
+				if y, err := db.GetSetting("window_y"); err == nil && y != "" {
+					if width, err := db.GetSetting("window_width"); err == nil && width != "" {
+						if height, err := db.GetSetting("window_height"); err == nil && height != "" {
+							// Parse values
+							var xInt, yInt, widthInt, heightInt int
+							if _, err := fmt.Sscanf(x, "%d", &xInt); err == nil {
+								if _, err := fmt.Sscanf(y, "%d", &yInt); err == nil {
+									if _, err := fmt.Sscanf(width, "%d", &widthInt); err == nil {
+										if _, err := fmt.Sscanf(height, "%d", &heightInt); err == nil {
+											// Validate values
+											if widthInt >= 400 && heightInt >= 300 && widthInt <= 4000 && heightInt <= 3000 {
+												if xInt > -1000 && xInt < 3000 && yInt > -1000 && yInt < 3000 {
+													log.Printf("Restoring window state from database: x=%d, y=%d, width=%d, height=%d", xInt, yInt, widthInt, heightInt)
+													runtime.WindowSetSize(ctx, widthInt, heightInt)
+													runtime.WindowSetPosition(ctx, xInt, yInt)
+													restoredFromDB = true
+													// Store in memory for minimize-restore
+													lastWindowState.width = widthInt
+													lastWindowState.height = heightInt
+													lastWindowState.x = xInt
+													lastWindowState.y = yInt
+													lastWindowState.valid.Store(true)
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if !restoredFromDB {
+				// Use default size if restoration failed
+				log.Println("No saved window state found, using defaults")
+				runtime.WindowSetSize(ctx, 1024, 768)
+				runtime.WindowCenter(ctx)
+			}
+
+			runtime.WindowShow(ctx)
+			log.Println("Window initialized")
+
 			if shouldCloseToTray() {
 				startTray(ctx)
 			}
+
+			// Detect network speed on startup in background
+			go func() {
+				log.Println("Detecting network speed...")
+				detector := network.NewDetector()
+				detectCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+
+				result := detector.DetectSpeed(detectCtx)
+				if result.DetectionSuccess {
+					db.SetSetting("network_speed", string(result.SpeedLevel))
+					db.SetSetting("network_bandwidth_mbps", fmt.Sprintf("%.2f", result.BandwidthMbps))
+					db.SetSetting("network_latency_ms", strconv.FormatInt(result.LatencyMs, 10))
+					db.SetSetting("max_concurrent_refreshes", strconv.Itoa(result.MaxConcurrency))
+					db.SetSetting("last_network_test", result.DetectionTime.Format(time.RFC3339))
+					log.Printf("Network detection complete: %s (max concurrency: %d)", result.SpeedLevel, result.MaxConcurrency)
+				} else {
+					log.Printf("Network detection failed: %s", result.ErrorMessage)
+				}
+			}()
 
 			// Start background scheduler after a longer delay to allow UI to show first
 			go func() {
