@@ -4,7 +4,7 @@ This directory contains end-to-end (E2E) tests for the MrRSS frontend applicatio
 
 ## Test Structure
 
-```
+```plaintext
 cypress/
 ├── e2e/                      # E2E test files
 │   ├── app-smoke.cy.ts      # Basic smoke tests
@@ -26,12 +26,14 @@ cypress/
 ### Prerequisites
 
 1. Install dependencies:
+
    ```bash
    cd frontend
    npm install
    ```
 
 2. Start the MrRSS backend server:
+
    ```bash
    # From the project root
    wails dev
@@ -42,6 +44,7 @@ cypress/
 ### Running Tests Locally
 
 **Interactive Mode (with Cypress GUI):**
+
 ```bash
 cd frontend
 npm run cypress
@@ -50,6 +53,7 @@ npm run test:e2e:headed
 ```
 
 **Headless Mode (for CI/CD):**
+
 ```bash
 cd frontend
 npm run cypress:headless
@@ -60,6 +64,7 @@ npm run test:e2e
 ### Running from Project Root
 
 Using Make:
+
 ```bash
 make test-frontend-e2e
 ```
@@ -69,6 +74,7 @@ make test-frontend-e2e
 The E2E tests cover the following key user flows:
 
 ### 1. Settings Persistence (`settings-persistence.cy.ts`)
+
 - Theme changes persist after closing and reopening settings
 - Language changes persist across sessions
 - Update interval changes are saved
@@ -76,6 +82,7 @@ The E2E tests cover the following key user flows:
 - Settings save when switching between tabs
 
 ### 2. Feed Management (`feed-management.cy.ts`)
+
 - Adding new feeds
 - Deleting feeds
 - Refreshing feeds
@@ -84,6 +91,7 @@ The E2E tests cover the following key user flows:
 - Searching feeds
 
 ### 3. Article Operations (`article-operations.cy.ts`)
+
 - Marking articles as read
 - Marking articles as favorite
 - Filtering articles by read status
@@ -94,6 +102,7 @@ The E2E tests cover the following key user flows:
 - Opening articles in external browser
 
 ### 4. Theme and Language (`theme-and-language.cy.ts`)
+
 - Switching between light and dark themes
 - Theme persistence after page reload
 - Switching between languages (English/Chinese)
@@ -102,6 +111,7 @@ The E2E tests cover the following key user flows:
 - Theme applied to all components
 
 ### 5. Smoke Tests (`app-smoke.cy.ts`)
+
 - Application loads successfully
 - Sidebar displays correctly
 - Navigation works
@@ -171,13 +181,13 @@ describe('Feature Name', () => {
   it('should do something', () => {
     // Intercept API calls
     cy.intercept('GET', '/api/endpoint').as('getEndpoint')
-    
+
     // Perform actions
     cy.get('button').click()
-    
+
     // Wait for API
     cy.wait('@getEndpoint')
-    
+
     // Assert expected behavior
     cy.contains('Expected Result').should('exist')
   })
@@ -189,6 +199,7 @@ describe('Feature Name', () => {
 ### Tests Fail with "Connection Refused"
 
 Make sure the backend server is running on port 34115:
+
 ```bash
 go run main.go
 ```

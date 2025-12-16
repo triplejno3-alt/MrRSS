@@ -5,12 +5,28 @@ All notable changes to MrRSS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.20] - 2025-12-16
+
+### Changed
+
+- Added more tests for backend and frontend components to improve code reliability.
+- Updated dependencies to latest versions for security and performance improvements.
+
+### Fixed
+
+- Fixed issues related to MacOS platform:
+  - Updated icons for better appearance.
+  - Added more white space on top of the main window for better visual balance.
+  - Disabled icon name on tray.
+  - Fixed the issue where window can not be dragged.
+  - Fixed the issue where application not closing correctly after maximizing.
+
 ## [1.2.19] - 2025-12-15
 
 ### Fixed
 
 - Fixed the issue where some settings were not saved and applied correctly.
-- Fixed the issue where macOS application failing to launch after installation。
+- Fixed the issue where macOS application failing to launch after installation.
 
 ## [1.2.18] - 2025-12-14
 

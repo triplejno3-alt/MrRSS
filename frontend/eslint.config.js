@@ -139,6 +139,8 @@ export default [
       '*.config.ts',
       'wailsjs/',
       'src/wailsjs/',
+      'cypress/',
+      'public/',
     ],
   },
 ];

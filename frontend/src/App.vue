@@ -289,8 +289,8 @@ function onFeedUpdated(): void {
 .app-container.macos-padding select,
 .app-container.macos-padding a,
 .app-container.macos-padding .resizer,
-.app-container.macos-padding [role="button"],
-.app-container.macos-padding img[role="button"],
+.app-container.macos-padding [role='button'],
+.app-container.macos-padding img[role='button'],
 .app-container.macos-padding .clickable,
 .app-container.macos-padding h2,
 .app-container.macos-padding h3 {
