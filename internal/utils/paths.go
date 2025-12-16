@@ -139,3 +139,8 @@ func GetMediaCacheDir() (string, error) {
 func IsWindows() bool {
 	return runtime.GOOS == "windows"
 }
+
+// IsMacOS returns true if the current platform is MacOS (Darwin)
+func IsMacOS() bool {
+	return runtime.GOOS == "darwin"
+}

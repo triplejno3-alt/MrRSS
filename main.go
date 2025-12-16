@@ -320,6 +320,8 @@ func main() {
 			Appearance:           mac.NSAppearanceNameAqua,
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
+			// Prevent fullscreen black screen issue on MacOS
+			DisableZoom: false,
 			About: &mac.AboutInfo{
 				Title:   "MrRSS",
 				Message: "A modern, privacy-focused RSS reader\n\nCopyright © 2025 MrRSS Team",

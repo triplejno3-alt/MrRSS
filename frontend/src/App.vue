@@ -19,6 +19,7 @@ import { useKeyboardShortcuts } from './composables/ui/useKeyboardShortcuts';
 import { useContextMenu } from './composables/ui/useContextMenu';
 import { useResizablePanels } from './composables/ui/useResizablePanels';
 import { useWindowState } from './composables/core/useWindowState';
+import { usePlatform } from './composables/core/usePlatform';
 import type { Feed } from './types/models';
 
 const store = useAppStore();
@@ -47,6 +48,9 @@ const { sidebarWidth, articleListWidth, startResizeSidebar, startResizeArticleLi
 // Initialize window state management
 const windowState = useWindowState();
 windowState.init();
+
+// Detect platform for MacOS-specific styles
+const { isMacOS } = usePlatform();
 
 // Initialize keyboard shortcuts
 const { shortcuts } = useKeyboardShortcuts({
@@ -178,6 +182,7 @@ function onFeedUpdated(): void {
 <template>
   <div
     class="app-container flex h-screen w-full bg-bg-primary text-text-primary overflow-hidden"
+    :class="{ 'macos-padding': isMacOS }"
     :style="{
       '--sidebar-width': sidebarWidth + 'px',
       '--article-list-width': articleListWidth + 'px',
@@ -265,6 +270,30 @@ function onFeedUpdated(): void {
 </template>
 
 <style>
+/* MacOS-specific styles */
+.app-container.macos-padding {
+  padding-top: 28px; /* Space for MacOS window controls */
+}
+
+/* MacOS window dragging support */
+.app-container.macos-padding .sidebar,
+.app-container.macos-padding .article-list-header,
+.app-container.macos-padding .article-detail-header {
+  -webkit-app-region: drag;
+}
+
+/* Make interactive elements draggable on MacOS */
+.app-container.macos-padding button,
+.app-container.macos-padding input,
+.app-container.macos-padding textarea,
+.app-container.macos-padding select,
+.app-container.macos-padding a,
+.app-container.macos-padding .resizer,
+.app-container.macos-padding [role="button"],
+.app-container.macos-padding .clickable {
+  -webkit-app-region: no-drag;
+}
+
 .toast-container {
   position: fixed;
   top: 10px;
@@ -277,6 +306,12 @@ function onFeedUpdated(): void {
   gap: 8px;
   pointer-events: none;
 }
+
+/* Adjust toast position for MacOS */
+.macos-padding ~ .toast-container {
+  top: 38px; /* Account for MacOS top padding */
+}
+
 .toast-container > * {
   pointer-events: auto;
 }
@@ -284,6 +319,9 @@ function onFeedUpdated(): void {
   .toast-container {
     top: 20px;
     gap: 10px;
+  }
+  .macos-padding ~ .toast-container {
+    top: 48px;
   }
 }
 .resizer {

@@ -4,6 +4,7 @@ package tray
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
 
@@ -74,7 +75,11 @@ func (m *Manager) run(ctx context.Context, onQuit func(), onShow func()) {
 	}
 	labels := m.getLabels()
 
-	systray.SetTitle(labels.title)
+	// On MacOS, don't set title (only show icon)
+	// On other platforms, show the title
+	if runtime.GOOS != "darwin" {
+		systray.SetTitle(labels.title)
+	}
 	systray.SetTooltip(labels.tooltip)
 
 	showItem := systray.AddMenuItem(labels.show, labels.tooltip)
