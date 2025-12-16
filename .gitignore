@@ -52,5 +52,10 @@ dist/
 package.json.md5
 *.syso
 
+# Cypress
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+frontend/cypress/downloads/
+
 # log
 *.log

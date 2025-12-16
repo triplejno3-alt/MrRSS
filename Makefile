@@ -38,6 +38,9 @@ test: test-frontend test-backend ## Run all tests
 test-frontend: ## Run frontend tests
 	cd frontend && npm test
 
+test-frontend-e2e: ## Run frontend E2E tests with Cypress
+	cd frontend && npm run test:e2e
+
 test-backend: ## Run backend tests
 	go test -v -timeout=5m -cover ./internal/...
 
@@ -45,6 +48,8 @@ test-coverage: ## Run backend tests with coverage
 	go test -v -timeout=5m -coverprofile=coverage.out -covermode=atomic ./internal/...
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+
+test-all: test-frontend test-frontend-e2e test-backend ## Run all tests including E2E
 
 # Code Quality
 lint: lint-frontend lint-backend ## Run all linters
