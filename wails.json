@@ -1,6 +1,14 @@
 {
   "name": "MrRSS",
   "version": "1.2.20",
+  "outputfilename": "MrRSS",
+  "frontend": {
+    "dir": "./frontend",
+    "install": "npm install",
+    "build": "npm run build",
+    "dev": "npm run dev",
+    "devServerUrl": "http://localhost:5173"
+  },
   "author": {
     "name": "Ch3nyang",
     "email": "mail@ch3nyang.top"
@@ -14,8 +22,5 @@
     "comments": "Built with Wails",
     "bundleIdentifier": "com.mrrss.app",
     "category": "public.app-category.news"
-  },
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
-  "outputfilename": "MrRSS"
+  }
 }

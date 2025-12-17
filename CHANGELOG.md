@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated single instance handling to use v3 API
   - Updated event handling to use v3 hooks
   - Removed deprecated `wailsjsdir` configuration
+  - Updated build system to use Taskfile and Wails v3 CLI
+  - Updated dependencies to work with WebKit2GTK 4.1 and libsoup 3.0
+
+### Fixed
+
+- Fixed GitHub Actions workflows compatibility with Wails v3
+- Removed references to obsolete Wails v2 build steps
+- Fixed YAML syntax errors in CI/CD pipelines
 
 ## [1.2.20] - 2025-12-16
 

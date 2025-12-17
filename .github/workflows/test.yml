@@ -16,29 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Detect Wails version
-        id: wails_version
-        run: |
-          if grep -q 'wailsapp/wails/v3' go.mod; then
-            echo "version=v3" >> $GITHUB_OUTPUT
-            echo "Detected Wails v3"
-          else
-            echo "version=v2" >> $GITHUB_OUTPUT
-            echo "Detected Wails v2"
-          fi
-
-      - name: Install Linux dependencies (Wails v2)
-        if: steps.wails_version.outputs.version == 'v2'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            gcc \
-            pkg-config
-
       - name: Install Linux dependencies (Wails v3)
-        if: steps.wails_version.outputs.version == 'v3'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -131,29 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Detect Wails version
-        id: wails_version
-        run: |
-          if grep -q 'wailsapp/wails/v3' go.mod; then
-            echo "version=v3" >> $GITHUB_OUTPUT
-            echo "Detected Wails v3"
-          else
-            echo "version=v2" >> $GITHUB_OUTPUT
-            echo "Detected Wails v2"
-          fi
-
-      - name: Install Linux dependencies (Wails v2)
-        if: steps.wails_version.outputs.version == 'v2'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            gcc \
-            pkg-config
-
       - name: Install Linux dependencies (Wails v3)
-        if: steps.wails_version.outputs.version == 'v3'
         run: |
           sudo apt-get update
           sudo apt-get install -y \

@@ -380,7 +380,7 @@ func main() {
 
 	// Create system tray if close_to_tray is enabled
 	var systemTray *application.SystemTray
-	
+
 	setupSystemTray := func() {
 		if systemTray != nil {
 			return // Already set up
@@ -391,7 +391,7 @@ func main() {
 
 		// Create tray menu
 		trayMenu := app.NewMenu()
-		
+
 		// Get language for labels
 		lang := "en"
 		if l, err := db.GetSetting("language"); err == nil && l != "" {

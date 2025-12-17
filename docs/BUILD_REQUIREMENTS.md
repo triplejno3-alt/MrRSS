@@ -4,9 +4,9 @@ This document describes the system-level dependencies required for building MrRS
 
 ## Overview
 
-MrRSS uses several native libraries that require CGO (C bindings for Go):
+MrRSS uses Wails v3 (alpha) framework which requires CGO (C bindings for Go):
 
-- **Wails v3**: For the desktop application framework (including built-in system tray)
+- **Wails v3**: For the desktop application framework with built-in system tray
 - **SQLite**: Pure Go implementation (`modernc.org/sqlite`), no C dependencies
 
 ## Important: CGO Requirement
@@ -44,8 +44,10 @@ sudo apt-get install -y \
 - `gcc`: C compiler (required for CGO)
 - `pkg-config`: Build tool for finding libraries
 - `libgtk-3-dev`: GTK3 development headers (for Wails UI)
-- `libwebkit2gtk-4.1-dev`: WebKit2GTK development headers (for Wails webview)
-- `libsoup-3.0-dev`: HTTP library (required for Wails v3)
+- `libwebkit2gtk-4.1-dev`: WebKit2GTK 4.1 development headers (for Wails webview, **required for Wails v3**)
+- `libsoup-3.0-dev`: HTTP library 3.0 (required for Wails v3)
+
+**Important**: Wails v3 requires WebKit2GTK 4.1 and libsoup 3.0. Older versions (WebKit2GTK 4.0, libsoup 2.4) are not compatible.
 
 **Note for Linux Mint**: Also install `libxapp-dev`
 
@@ -152,20 +154,25 @@ macOS binaries are self-contained and don't require additional runtime dependenc
 # Development build with hot reload
 wails3 dev
 
-# Production build
-wails3 build -clean -ldflags "-s -w"
+# Production build (recommended: use Task)
+task build
 
-# Platform-specific build
-wails3 build -platform linux/amd64
-wails3 build -platform windows/amd64
-wails3 build -platform darwin/universal
+# Or directly with wails3
+wails3 build
+
+# Platform-specific build with Task
+task linux:build
+task windows:build
+task darwin:build
 ```
 
-### Important Wails Flags
+### Build Configuration
 
-- `-clean`: Clean build directory before building
-- `-ldflags "-s -w"`: Strip debug information for smaller binaries
-- `-platform <os/arch>`: Cross-compile for specific platform
+Wails v3 uses `build/config.yml` for build configuration and Taskfile for platform-specific builds:
+
+- **Frontend**: Automatically built via `frontend/package.json` scripts
+- **Backend**: CGO-enabled Go build with platform-specific flags
+- **Installers**: Created via platform-specific scripts (NSIS, create-dmg.sh, create-appimage.sh)
 
 ### Cross-Compilation
 
