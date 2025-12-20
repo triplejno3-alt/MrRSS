@@ -431,7 +431,7 @@ const zh: TranslationMessages = {
   clearReadLater: '清空稍后阅读',
   clearedReadLater: '稍后阅读列表已清空',
   databaseCleanedSuccess: '数据库清理成功。已删除 {count} 篇文章。',
-  opmlImportedSuccess: 'OPML 已导入。订阅源即将显示。',
+  opmlImportedSuccess: 'OPML 导入成功。已导入 {count} 个订阅源。',
   opmlExportedSuccess: 'OPML 导出成功。',
   errorSavingSettings: '保存设置时出错',
   errorAddingFeed: '添加订阅时出错',

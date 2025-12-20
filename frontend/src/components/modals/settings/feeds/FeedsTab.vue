@@ -4,7 +4,7 @@ import FeedManagementSettings from './FeedManagementSettings.vue';
 import type { Feed } from '@/types/models';
 
 const emit = defineEmits<{
-  'import-opml': [event: Event];
+  'import-opml': [];
   'export-opml': [];
   'cleanup-database': [];
   'add-feed': [];
@@ -16,8 +16,8 @@ const emit = defineEmits<{
 }>();
 
 // Event handlers that pass through to parent
-function handleImportOPML(event: Event) {
-  emit('import-opml', event);
+function handleImportOPML() {
+  emit('import-opml');
 }
 
 function handleExportOPML() {

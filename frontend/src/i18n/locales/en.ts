@@ -436,7 +436,7 @@ const en: TranslationMessages = {
   clearReadLater: 'Clear Read Later',
   clearedReadLater: 'Read Later list cleared',
   databaseCleanedSuccess: 'Database cleaned up successfully. {count} articles deleted.',
-  opmlImportedSuccess: 'OPML Imported. Feeds will appear shortly.',
+  opmlImportedSuccess: 'OPML imported successfully. {count} feeds imported.',
   opmlExportedSuccess: 'OPML exported successfully.',
   errorSavingSettings: 'Error saving settings',
   errorAddingFeed: 'Error adding feed',
