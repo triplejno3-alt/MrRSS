@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the issue where different articles display the same content due to incorrect URL matching. (#257)
+
 ## [1.3.5] - 2025-12-20
 
 **BREAKING**: AI-based summarization and translation now need a full path instead of just endpoint URL.
