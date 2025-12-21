@@ -68,7 +68,10 @@ export function useFeedForm(feed?: Feed) {
   });
 
   // Watch for category selection changes
-  function handleCategoryChange() {
+  function handleCategoryChange(value?: string) {
+    if (value !== undefined) {
+      categorySelection.value = value;
+    }
     if (categorySelection.value === '__custom__') {
       showCustomCategory.value = true;
       category.value = '';
