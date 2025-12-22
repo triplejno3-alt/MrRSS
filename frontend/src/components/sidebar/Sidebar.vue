@@ -89,8 +89,8 @@ function handleDragOver(categoryName: string, feedId: number | null, event: Even
   onDragOver(categoryName, feedId, event);
 }
 
-function handleDragLeave() {
-  onDragLeave();
+function handleDragLeave(categoryName: string, event: Event) {
+  onDragLeave(categoryName, event);
 }
 
 async function handleDrop(categoryName: string, feeds: any[]) {
@@ -211,7 +211,7 @@ const emitShowSettings = () => window.dispatchEvent(new CustomEvent('show-settin
         @dragstart="(feedId, e) => handleDragStart(feedId, e)"
         @dragend="handleDragEnd"
         @feed-drag-over="(feedId, e) => handleDragOver(name, feedId, e)"
-        @dragleave="handleDragLeave"
+        @dragleave="(categoryName, e) => handleDragLeave(categoryName, e)"
         @drop="() => handleDrop(name, data._feeds)"
       />
 
@@ -237,7 +237,7 @@ const emitShowSettings = () => window.dispatchEvent(new CustomEvent('show-settin
         @dragstart="(feedId, e) => handleDragStart(feedId, e)"
         @dragend="handleDragEnd"
         @feed-drag-over="(feedId, e) => handleDragOver('uncategorized', feedId, e)"
-        @dragleave="handleDragLeave"
+        @dragleave="(categoryName, e) => handleDragLeave(categoryName, e)"
         @drop="() => handleDrop('uncategorized', tree.uncategorized)"
       />
     </div>

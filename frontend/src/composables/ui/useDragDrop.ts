@@ -109,9 +109,25 @@ export function useDragDrop() {
     console.log('[onDragOver] Updated dropPreview:', dropPreview.value);
   }
 
-  function onDragLeave() {
-    // Clear preview when leaving the category
+  function onDragLeave(category: string, event: Event) {
+    if (!event || !(event instanceof DragEvent)) {
+      return;
+    }
+
+    // Only clear the preview if we're actually leaving the category container
+    // Check if the relatedTarget (where we're going) is outside the category
+    const target = event.target as HTMLElement;
+    const relatedTarget = event.relatedTarget as HTMLElement;
+
+    // If moving to a child element, don't clear the preview
+    if (relatedTarget && target.contains(relatedTarget)) {
+      return;
+    }
+
+    // If moving from one category to another, the new category will handle it
+    // Just clear when leaving the drag area entirely
     dropPreview.value = { targetFeedId: null, beforeTarget: true };
+    console.log('[onDragLeave] Cleared preview for category:', category);
   }
 
   async function onDrop(

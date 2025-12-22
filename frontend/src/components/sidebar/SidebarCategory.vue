@@ -19,7 +19,7 @@ interface Props {
   draggingFeedId?: number | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   toggle: [];
@@ -31,12 +31,15 @@ const emit = defineEmits<{
   drop: [];
   dragstart: [feedId: number, event: Event];
   dragend: [];
+  dragleave: [categoryName: string, event: Event];
 }>();
 
 // Handle dragover on the feeds-list container using event delegation
 function handleFeedsListDragOver(event: DragEvent) {
   // Prevent default to allow drop
   event.preventDefault();
+  // Stop propagation to prevent triggering parent handlers
+  event.stopPropagation();
 
   // Find which feed item we're hovering over
   const target = event.target as HTMLElement;
@@ -49,9 +52,36 @@ function handleFeedsListDragOver(event: DragEvent) {
     console.log('[SidebarCategory] Emitting feedDragOver with feedId:', feedId, 'event:', event);
     emit('feedDragOver', feedId, event);
   } else {
-    // Not hovering over any specific feed
-    console.log('[SidebarCategory] Emitting feedDragOver with null feedId, event:', event);
-    emit('feedDragOver', null, event);
+    // Not hovering over any specific feed (in gaps between feeds or empty space)
+    // Calculate which feed we're closest to based on Y position
+    const feedsList = event.currentTarget as HTMLElement;
+    if (feedsList) {
+      const feedItems = Array.from(feedsList.querySelectorAll('.feed-item'));
+      const listRect = feedsList.getBoundingClientRect();
+      const mouseY = event.clientY - listRect.top;
+
+      // Find the feed item closest to the mouse Y position
+      let closestFeedId: number | null = null;
+      let minDistance = Infinity;
+
+      for (const item of feedItems) {
+        const rect = item.getBoundingClientRect();
+        const itemCenterY = (rect.top + rect.bottom) / 2 - listRect.top;
+        const distance = Math.abs(mouseY - itemCenterY);
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          const feedIdStr = item.getAttribute('data-feed-id');
+          closestFeedId = feedIdStr ? parseInt(feedIdStr, 10) : null;
+        }
+      }
+
+      console.log('[SidebarCategory] In gap, closest feedId:', closestFeedId, 'event:', event);
+      emit('feedDragOver', closestFeedId, event);
+    } else {
+      console.log('[SidebarCategory] Emitting feedDragOver with null feedId, event:', event);
+      emit('feedDragOver', null, event);
+    }
   }
 }
 
@@ -70,7 +100,7 @@ function handleCategoryDragOver(event: DragEvent) {
   <div
     :class="['mb-1 category-container', isDragOver ? 'drag-over' : '']"
     @dragover.self="handleCategoryDragOver"
-    @dragleave.self="() => {}"
+    @dragleave.self="(e) => $emit('dragleave', props.name, e)"
     @drop.self="handleDrop"
   >
     <div
