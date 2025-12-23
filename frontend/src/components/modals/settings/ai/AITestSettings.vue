@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PhCheckCircle, PhArrowClockwise, PhWarningCircle, PhBookOpen } from '@phosphor-icons/vue';
 import type { AITestInfo } from '@/types/settings';
@@ -66,10 +66,7 @@ function formatTime(timeStr: string): string {
   }
 }
 
-onMounted(() => {
-  // Auto-run test on mount to check current configuration
-  testAIConfig();
-});
+// Removed onMounted auto-test trigger - test is now manual only
 </script>
 
 <template>
@@ -80,10 +77,6 @@ onMounted(() => {
       <PhCheckCircle :size="14" class="sm:w-4 sm:h-4" />
       {{ t('aiConfigTest') }}
     </label>
-
-    <div class="text-xs sm:text-sm text-text-secondary mb-3 sm:mb-4">
-      {{ t('aiConfigTestDesc') }}
-    </div>
 
     <!-- AI Test Status Display -->
     <div
