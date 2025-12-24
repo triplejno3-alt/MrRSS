@@ -32,6 +32,7 @@ type Feed struct {
 	XPathItemThumbnail  string `json:"xpath_item_thumbnail"`   // XPath to extract item thumbnail
 	XPathItemCategories string `json:"xpath_item_categories"`  // XPath to extract item categories
 	XPathItemUid        string `json:"xpath_item_uid"`         // XPath to extract item unique ID
+	ArticleViewMode     string `json:"article_view_mode"`      // Article view mode override ('global', 'webpage', 'rendered')
 }
 
 type Article struct {

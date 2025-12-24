@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Supported customized request headers for AI services. (#301)
 - Supported enable automatically extracting full article content from original website. (#306)
+- Supported choosing article view mode for each feed. (#309)
 
 ### Changed
 

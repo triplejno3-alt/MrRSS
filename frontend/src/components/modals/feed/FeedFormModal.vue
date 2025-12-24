@@ -42,6 +42,7 @@ const {
   xpathItemThumbnail,
   xpathItemCategories,
   xpathItemUid,
+  articleViewMode,
   proxyMode,
   proxyType,
   proxyHost,
@@ -133,6 +134,9 @@ async function submit() {
       body.xpath_item_categories = xpathItemCategories.value;
       body.xpath_item_uid = xpathItemUid.value;
     }
+
+    // Add article view mode
+    body.article_view_mode = articleViewMode.value;
 
     if (props.mode === 'edit') {
       body.id = props.feed!.id;
@@ -391,6 +395,7 @@ async function submit() {
           :image-gallery-enabled="imageGalleryEnabled"
           :is-image-mode="isImageMode"
           :hide-from-timeline="hideFromTimeline"
+          :article-view-mode="articleViewMode"
           :proxy-mode="proxyMode"
           :proxy-type="proxyType"
           :proxy-host="proxyHost"
@@ -401,6 +406,7 @@ async function submit() {
           :refresh-interval="refreshInterval"
           @update:is-image-mode="isImageMode = $event"
           @update:hide-from-timeline="hideFromTimeline = $event"
+          @update:article-view-mode="articleViewMode = $event"
           @update:proxy-mode="proxyMode = $event"
           @update:proxy-type="proxyType = $event"
           @update:proxy-host="proxyHost = $event"

@@ -49,6 +49,7 @@ export interface Feed {
   xpath_item_thumbnail?: string;
   xpath_item_categories?: string;
   xpath_item_uid?: string;
+  article_view_mode?: string; // Article view mode override ('global', 'webpage', 'rendered')
 }
 
 export interface UnreadCounts {
