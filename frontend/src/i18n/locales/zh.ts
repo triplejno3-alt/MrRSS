@@ -407,7 +407,7 @@ const zh: TranslationMessages = {
   mediaCacheCleanup: '清理媒体缓存',
   mediaCacheCleanupDesc: '删除旧的缓存媒体文件',
   mediaCacheEnabled: '启用媒体缓存',
-  mediaCacheEnabledDesc: '本地缓存媒体文件以避免防盗链保护导致的链接失效',
+  mediaCacheEnabledDesc: '本地缓存媒体文件以避免防盗链保护导致的链接失效，解决图片无法加载的问题',
   mediaCacheMaxAge: '最大缓存保留天数',
   mediaCacheMaxAgeDesc: '删除超过此天数的缓存媒体',
   mediaCacheMaxSize: '最大缓存大小',

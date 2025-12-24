@@ -414,7 +414,7 @@ const en: TranslationMessages = {
   mediaCacheCleanupDesc: 'Remove old cached media files',
   mediaCacheEnabled: 'Enable Media Cache',
   mediaCacheEnabledDesc:
-    'Cache media files locally to avoid broken links from anti-hotlinking protection',
+    'Cache media files locally to avoid broken links from anti-hotlinking protection and fix image loading issues',
   mediaCacheMaxAge: 'Max Cache Age',
   mediaCacheMaxAgeDesc: 'Delete cached media older than this many days',
   mediaCacheMaxSize: 'Max Cache Size',
