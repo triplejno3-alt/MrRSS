@@ -104,6 +104,23 @@ export function useSidebar() {
             openCategories.value.add(cat);
           }
         });
+
+        // Also auto-expand parent categories for multi-level
+        // For example, if "Tech/Blogs" exists, also expand "Tech"
+        const parentCategories = new Set<string>();
+        newCategories.forEach((cat) => {
+          const parts = cat.split('/');
+          for (let i = 1; i < parts.length; i++) {
+            const parentPath = parts.slice(0, i).join('/');
+            parentCategories.add(parentPath);
+          }
+        });
+
+        parentCategories.forEach((parentCat) => {
+          if (!openCategories.value.has(parentCat) && !hasSavedState) {
+            openCategories.value.add(parentCat);
+          }
+        });
       }
     },
     { immediate: true }

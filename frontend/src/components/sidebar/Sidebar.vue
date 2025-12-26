@@ -57,7 +57,7 @@ const {
   tree,
   categoryUnreadCounts,
   toggleCategory,
-  isCategoryOpen,
+  isCategoryOpen: checkIsCategoryOpen,
   searchQuery,
   onFeedContextMenu,
   onCategoryContextMenu,
@@ -194,7 +194,9 @@ const emitShowSettings = () => window.dispatchEvent(new CustomEvent('show-settin
         :key="name"
         :name="name"
         :feeds="data._feeds"
-        :is-open="isCategoryOpen(name)"
+        :children="data._children"
+        :level="0"
+        :is-open="checkIsCategoryOpen(name)"
         :is-active="store.currentCategory === name"
         :unread-count="categoryUnreadCounts[name] || 0"
         :current-feed-id="store.currentFeedId"
@@ -203,10 +205,14 @@ const emitShowSettings = () => window.dispatchEvent(new CustomEvent('show-settin
         :is-edit-mode="isEditMode"
         :drop-preview="dropPreview"
         :dragging-feed-id="draggingFeedId"
+        :is-category-open="checkIsCategoryOpen"
         @toggle="toggleCategory(name)"
         @select-category="store.setCategory(name)"
         @select-feed="store.setFeed"
         @category-context-menu="(e) => onCategoryContextMenu(e, name)"
+        @child-toggle="toggleCategory"
+        @child-select-category="store.setCategory"
+        @child-context-menu="(e, path) => onCategoryContextMenu(e, path)"
         @feed-context-menu="onFeedContextMenu"
         @dragstart="(feedId, e) => handleDragStart(feedId, e)"
         @dragend="handleDragEnd"

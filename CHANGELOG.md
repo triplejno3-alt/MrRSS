@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed the issue where length limit for AI-generated summaries was not applied correctly. (#323)
 - Fixed the issue where the last time of network detect displays 739609 days ago if never detected before. (#314)
+- Fixed the issue where multi-layer categories in sidebar do not display correctly. (#322)
 
 ## [1.3.9] - 2025-12-25
 
