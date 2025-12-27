@@ -590,6 +590,8 @@ const zh: TranslationMessages = {
   shortcutOther: '其他',
   shortcuts: '快捷键',
   shortcutsDesc: '自定义常用操作的键盘快捷键',
+  shortcutsEnabled: '启用快捷键',
+  shortcutsEnabledDesc: '启用或禁用键盘快捷键',
   shortcutUpdated: '快捷键已更新',
   showAdvancedSettings: '显示高级设置',
   showArticlePreviewImages: '显示预览图片',
@@ -638,6 +640,8 @@ const zh: TranslationMessages = {
   syncNow: '立即同步',
   systemProxyInfo:
     '软件默认会自动使用操作系统的代理设置，通常无需手动配置。仅在需要使用不同于系统代理的特定代理时才需要启用此选项。',
+  tunModeInfo:
+    '如果您使用了代理工具（如 Clash、V2Ray 等），请确保开启 TUN 模式或增强模式，以允许所有应用程序通过代理。',
   targetLanguage: '目标语言',
   targetLanguageDesc: '将文章标题翻译为此语言',
   testConnection: '测试连接',

@@ -56,6 +56,7 @@ export interface SettingsData {
   refresh_mode: string;
   rules: string;
   shortcuts: string;
+  shortcuts_enabled: boolean;
   show_article_preview_images: boolean;
   show_hidden_articles: boolean;
   startup_on_boot: boolean;

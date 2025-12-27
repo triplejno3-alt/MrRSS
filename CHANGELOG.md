@@ -10,12 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Offer users a setting to enable or disable auto installation of updates after download. (#336)
+- Shortcuts can now be enabled or disabled via settings.
 
 ### Fixed
 
 - Fixed the issue where macOS privacy permission dialog appears repeatedly when opening articles. (#337)
 - Fixed the issue where GPU occupation is high when opening settings page. (#339)
 - Fixed the issue where some invalid feeds cause feed refresh to fail. (#341)
+- Fixed the issue where some images in article content rendering mode cannot be displayed correctly. (#327)
 
 ## [1.3.11] - 2025-12-26
 

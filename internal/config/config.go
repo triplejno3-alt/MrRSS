@@ -69,6 +69,7 @@ type Defaults struct {
 	RefreshMode              string `json:"refresh_mode"`
 	Rules                    string `json:"rules"`
 	Shortcuts                string `json:"shortcuts"`
+	ShortcutsEnabled         bool   `json:"shortcuts_enabled"`
 	ShowArticlePreviewImages bool   `json:"show_article_preview_images"`
 	ShowHiddenArticles       bool   `json:"show_hidden_articles"`
 	StartupOnBoot            bool   `json:"startup_on_boot"`
@@ -206,6 +207,8 @@ func GetString(key string) string {
 		return defaults.Rules
 	case "shortcuts":
 		return defaults.Shortcuts
+	case "shortcuts_enabled":
+		return strconv.FormatBool(defaults.ShortcutsEnabled)
 	case "show_article_preview_images":
 		return strconv.FormatBool(defaults.ShowArticlePreviewImages)
 	case "show_hidden_articles":

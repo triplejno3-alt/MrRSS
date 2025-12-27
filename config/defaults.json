@@ -50,6 +50,7 @@
   "refresh_mode": "fixed",
   "rules": "",
   "shortcuts": "",
+  "shortcuts_enabled": true,
   "show_article_preview_images": true,
   "show_hidden_articles": false,
   "startup_on_boot": false,

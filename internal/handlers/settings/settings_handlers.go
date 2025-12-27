@@ -65,6 +65,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		refreshMode, _ := h.DB.GetSetting("refresh_mode")
 		rules, _ := h.DB.GetSetting("rules")
 		shortcuts, _ := h.DB.GetSetting("shortcuts")
+		shortcutsEnabled, _ := h.DB.GetSetting("shortcuts_enabled")
 		showArticlePreviewImages, _ := h.DB.GetSetting("show_article_preview_images")
 		showHiddenArticles, _ := h.DB.GetSetting("show_hidden_articles")
 		startupOnBoot, _ := h.DB.GetSetting("startup_on_boot")
@@ -134,6 +135,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			"refresh_mode":                refreshMode,
 			"rules":                       rules,
 			"shortcuts":                   shortcuts,
+			"shortcuts_enabled":           shortcutsEnabled,
 			"show_article_preview_images": showArticlePreviewImages,
 			"show_hidden_articles":        showHiddenArticles,
 			"startup_on_boot":             startupOnBoot,
@@ -205,6 +207,7 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 			RefreshMode              string `json:"refresh_mode"`
 			Rules                    string `json:"rules"`
 			Shortcuts                string `json:"shortcuts"`
+			ShortcutsEnabled         string `json:"shortcuts_enabled"`
 			ShowArticlePreviewImages string `json:"show_article_preview_images"`
 			ShowHiddenArticles       string `json:"show_hidden_articles"`
 			StartupOnBoot            string `json:"startup_on_boot"`
@@ -441,6 +444,10 @@ func HandleSettings(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 
 		if req.Shortcuts != "" {
 			h.DB.SetSetting("shortcuts", req.Shortcuts)
+		}
+
+		if req.ShortcutsEnabled != "" {
+			h.DB.SetSetting("shortcuts_enabled", req.ShortcutsEnabled)
 		}
 
 		if req.ShowArticlePreviewImages != "" {

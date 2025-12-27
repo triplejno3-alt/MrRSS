@@ -598,6 +598,8 @@ const en: TranslationMessages = {
   shortcutOther: 'Other',
   shortcuts: 'Shortcuts',
   shortcutsDesc: 'Customize keyboard shortcuts for common actions',
+  shortcutsEnabled: 'Enable Shortcuts',
+  shortcutsEnabledDesc: 'Enable or disable keyboard shortcuts',
   shortcutUpdated: 'Shortcut updated',
   showAdvancedSettings: 'Show Advanced Settings',
   showArticlePreviewImages: 'Show Preview Images',
@@ -646,6 +648,8 @@ const en: TranslationMessages = {
   syncNow: 'Sync Now',
   systemProxyInfo:
     "The app automatically uses the operating system's proxy settings by default. You only need to enable this option if you want to use a different proxy than the system proxy.",
+  tunModeInfo:
+    'If you are using a proxy tool (such as Clash, V2Ray, etc.), please ensure TUN mode or Enhanced mode is enabled to allow all applications to use the proxy.',
   targetLanguage: 'Target Language',
   targetLanguageDesc: 'Language to translate article titles to',
   testConnection: 'Test Connection',

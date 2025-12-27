@@ -479,6 +479,13 @@
       "category": "general",
       "encrypted": false,
       "frontend_key": "autoUpdate"
+    },
+    "shortcuts_enabled": {
+      "type": "bool",
+      "default": true,
+      "category": "general",
+      "encrypted": false,
+      "frontend_key": "shortcutsEnabled"
     }
   }
 }
