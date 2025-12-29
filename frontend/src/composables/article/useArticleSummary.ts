@@ -11,10 +11,12 @@ interface SummarySettings {
 
 interface SummaryResult {
   summary: string;
+  html?: string;
   sentence_count: number;
   is_too_short: boolean;
   limit_reached?: boolean;
   used_fallback?: boolean;
+  thinking?: string;
   error?: string;
 }
 
@@ -58,19 +60,6 @@ export function useArticleSummary() {
     // If forcing regeneration, clear cache first
     if (force) {
       summaryCache.value.delete(article.id);
-    }
-
-    // Check if article already has a cached summary (only if not forcing)
-    // This is the FIRST check - always return cached summary if available
-    if (!force && article.summary && article.summary.trim() !== '') {
-      const cachedResult: SummaryResult = {
-        summary: article.summary,
-        sentence_count: 0, // We don't store this in DB
-        is_too_short: false,
-      };
-      // Store in cache but don't mark as loading since it's already done
-      summaryCache.value.set(article.id, cachedResult);
-      return cachedResult;
     }
 
     // Check in-memory cache (for summaries generated in current session)

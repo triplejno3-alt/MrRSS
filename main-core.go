@@ -172,6 +172,23 @@ func main() {
 	apiMux.HandleFunc("/api/ai-usage", func(w http.ResponseWriter, r *http.Request) { translationhandlers.HandleGetAIUsage(h, w, r) })
 	apiMux.HandleFunc("/api/ai-usage/reset", func(w http.ResponseWriter, r *http.Request) { translationhandlers.HandleResetAIUsage(h, w, r) })
 	apiMux.HandleFunc("/api/ai-chat", func(w http.ResponseWriter, r *http.Request) { chat.HandleAIChat(h, w, r) })
+	apiMux.HandleFunc("/api/ai/chat/sessions/delete-all", func(w http.ResponseWriter, r *http.Request) { chat.HandleDeleteAllSessions(h, w, r) })
+	apiMux.HandleFunc("/api/ai/chat/sessions", func(w http.ResponseWriter, r *http.Request) { chat.HandleListSessions(h, w, r) })
+	apiMux.HandleFunc("/api/ai/chat/session/create", func(w http.ResponseWriter, r *http.Request) { chat.HandleCreateSession(h, w, r) })
+	apiMux.HandleFunc("/api/ai/chat/session", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			chat.HandleGetSession(h, w, r)
+		case http.MethodPut, http.MethodPatch:
+			chat.HandleUpdateSession(h, w, r)
+		case http.MethodDelete:
+			chat.HandleDeleteSession(h, w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	apiMux.HandleFunc("/api/ai/chat/messages", func(w http.ResponseWriter, r *http.Request) { chat.HandleListMessages(h, w, r) })
+	apiMux.HandleFunc("/api/ai/chat/message/delete", func(w http.ResponseWriter, r *http.Request) { chat.HandleDeleteMessage(h, w, r) })
 	apiMux.HandleFunc("/api/ai/test", func(w http.ResponseWriter, r *http.Request) { aihandlers.HandleTestAIConfig(h, w, r) })
 	apiMux.HandleFunc("/api/ai/test/info", func(w http.ResponseWriter, r *http.Request) { aihandlers.HandleGetAITestInfo(h, w, r) })
 	apiMux.HandleFunc("/api/articles/toggle-hide", func(w http.ResponseWriter, r *http.Request) { article.HandleToggleHideArticle(h, w, r) })

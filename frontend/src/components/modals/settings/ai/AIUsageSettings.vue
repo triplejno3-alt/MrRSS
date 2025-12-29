@@ -39,9 +39,13 @@ async function fetchAIUsage() {
 }
 
 async function resetAIUsage() {
-  if (!window.confirm(t('aiUsageResetConfirm'))) {
-    return;
-  }
+  const confirmed = await window.showConfirm({
+    title: t('confirm'),
+    message: t('aiUsageResetConfirm'),
+    isDanger: true,
+  });
+  if (!confirmed) return;
+
   try {
     const response = await fetch('/api/ai-usage/reset', { method: 'POST' });
     if (response.ok) {

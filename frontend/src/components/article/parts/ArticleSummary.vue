@@ -1,17 +1,29 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue';
-import { PhTextAlignLeft, PhSpinnerGap, PhPlay, PhWarning, PhClock } from '@phosphor-icons/vue';
+import {
+  PhTextAlignLeft,
+  PhSpinnerGap,
+  PhPlay,
+  PhWarning,
+  PhClock,
+  PhBrain,
+} from '@phosphor-icons/vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
   summaryResult: {
     summary: string;
+    html?: string;
     sentence_count: number;
     is_too_short: boolean;
+    limit_reached?: boolean;
+    used_fallback?: boolean;
+    thinking?: string;
     error?: string;
   } | null;
   isLoadingSummary: boolean;
   translatedSummary: string;
+  translatedSummaryHTML: string;
   isTranslatingSummary: boolean;
   translationEnabled: boolean;
   summaryProvider?: string;
@@ -32,6 +44,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const showSummary = ref(true);
+const showThinking = ref(false);
 
 // Enhanced loading states
 const loadingTime = ref(0);
@@ -174,7 +187,16 @@ function handleGenerateSummary() {
       <!-- Summary Display -->
       <div v-else-if="summaryResult?.summary">
         <!-- Regenerate Button -->
-        <div class="flex justify-end mb-2">
+        <div class="flex justify-between items-center mb-2">
+          <button
+            v-if="summaryResult.thinking"
+            class="flex items-center gap-1 px-2 py-1 text-xs bg-bg-secondary text-text-secondary rounded hover:bg-bg-tertiary transition-colors"
+            @click="showThinking = !showThinking"
+          >
+            <PhBrain :size="12" />
+            <span>{{ showThinking ? t('hideThinking') : t('showThinking') }}</span>
+          </button>
+          <div class="flex-1"></div>
           <button
             class="flex items-center gap-1 px-2 py-1 text-xs bg-bg-secondary text-text-secondary rounded hover:bg-bg-tertiary transition-colors"
             :disabled="isLoadingSummary"
@@ -186,17 +208,32 @@ function handleGenerateSummary() {
           </button>
         </div>
 
-        <!-- Show translated summary only when translation is enabled -->
+        <!-- Thinking section -->
         <div
-          v-if="translationEnabled && translatedSummary"
-          class="text-sm text-text-primary leading-relaxed select-text"
+          v-if="summaryResult.thinking && showThinking"
+          class="mb-3 p-3 bg-bg-tertiary border-l-2 border-accent rounded text-xs text-text-secondary"
         >
-          {{ translatedSummary }}
+          <div class="font-bold mb-2 flex items-center gap-1">
+            <PhBrain :size="12" />
+            {{ t('thinking') }}
+          </div>
+          <div class="whitespace-pre-wrap">{{ summaryResult.thinking }}</div>
         </div>
+
+        <!-- Show translated summary only when translation is enabled -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div
+          v-if="translationEnabled && translatedSummaryHTML"
+          class="text-sm text-text-primary leading-relaxed select-text prose prose-sm max-w-none"
+          v-html="translatedSummaryHTML"
+        ></div>
         <!-- Show original summary when no translation or as fallback -->
-        <p v-else class="text-sm text-text-primary leading-relaxed select-text">
-          {{ summaryResult.summary }}
-        </p>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div
+          v-else
+          class="text-sm text-text-primary leading-relaxed select-text prose prose-sm max-w-none"
+          v-html="summaryResult.html || summaryResult.summary"
+        ></div>
         <!-- Translation loading indicator -->
         <div v-if="isTranslatingSummary" class="flex items-center gap-1 mt-2 text-text-secondary">
           <PhSpinnerGap :size="12" class="animate-spin" />
@@ -229,3 +266,37 @@ function handleGenerateSummary() {
     </div>
   </div>
 </template>
+
+<style>
+/* Enable text selection for summary content */
+.prose.select-text,
+.prose.select-text * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Markdown prose styles */
+.prose {
+  color: inherit;
+}
+
+.prose pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.prose code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+</style>

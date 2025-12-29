@@ -1,6 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PhTextAlignLeft, PhTextT, PhPackage, PhRobot, PhInfo } from '@phosphor-icons/vue';
+import {
+  PhTextAlignLeft,
+  PhTextT,
+  PhPackage,
+  PhRobot,
+  PhInfo,
+  PhTrash,
+  PhBroom,
+} from '@phosphor-icons/vue';
 import type { SettingsData } from '@/types/settings';
 
 const { t } = useI18n();
@@ -14,6 +23,36 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   'update:settings': [settings: SettingsData];
 }>();
+
+const isClearingCache = ref(false);
+
+async function clearSummaryCache() {
+  const confirmed = await window.showConfirm({
+    title: t('clearSummaryCache'),
+    message: t('clearSummaryCacheConfirm'),
+    isDanger: true,
+  });
+  if (!confirmed) return;
+
+  isClearingCache.value = true;
+  try {
+    const response = await fetch('/api/articles/clear-summaries', {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      window.showToast(t('clearSummaryCacheSuccess'), 'success');
+    } else {
+      console.error('Server error:', response.status);
+      window.showToast(t('clearSummaryCacheFailed'), 'error');
+    }
+  } catch (error) {
+    console.error('Failed to clear summary cache:', error);
+    window.showToast(t('clearSummaryCacheFailed'), 'error');
+  } finally {
+    isClearingCache.value = false;
+  }
+}
 </script>
 
 <template>
@@ -166,6 +205,28 @@ const emit = defineEmits<{
           <option value="long">{{ t('summaryLengthLong') }}</option>
         </select>
       </div>
+
+      <!-- Cache Management -->
+      <div class="sub-setting-item">
+        <div class="flex-1 flex items-center sm:items-start gap-2 sm:gap-3 min-w-0">
+          <PhTrash :size="20" class="text-text-secondary mt-0.5 shrink-0 sm:w-6 sm:h-6" />
+          <div class="flex-1 min-w-0">
+            <div class="font-medium mb-0 sm:mb-1 text-sm">{{ t('clearSummaryCache') }}</div>
+            <div class="text-xs text-text-secondary hidden sm:block">
+              {{ t('clearSummaryCacheDesc') }}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          :disabled="isClearingCache"
+          class="btn-secondary"
+          @click="clearSummaryCache"
+        >
+          <PhBroom :size="16" class="sm:w-5 sm:h-5" />
+          {{ isClearingCache ? t('cleaning') : t('clearSummaryCacheButton') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -196,5 +257,8 @@ const emit = defineEmits<{
   @apply flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-lg w-full;
   background-color: rgba(59, 130, 246, 0.05);
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.btn-secondary {
+  @apply bg-bg-tertiary border border-border text-text-primary px-3 sm:px-4 py-1.5 sm:py-2 rounded-md cursor-pointer flex items-center gap-1.5 sm:gap-2 font-medium hover:bg-bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
 }
 </style>

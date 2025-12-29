@@ -66,13 +66,15 @@ export function useArticleDetail() {
         articleContent.value = '';
         currentArticleId.value = null;
 
+        // Always fetch article content for AI chat and translation features
+        await fetchArticleContent();
+
         // Check if there's a pending render action from context menu
         if (pendingRenderAction.value) {
           // Apply the explicit action instead of default
           if (pendingRenderAction.value === 'showContent') {
             showContent.value = true;
             userPreferredMode.value = 'rendered';
-            await fetchArticleContent();
           } else if (pendingRenderAction.value === 'showOriginal') {
             showContent.value = false;
             userPreferredMode.value = 'original';
@@ -81,12 +83,7 @@ export function useArticleDetail() {
         } else {
           // Apply user's preferred mode or determine from feed/global settings
           const preferredMode = userPreferredMode.value || getEffectiveViewMode();
-          if (preferredMode === 'rendered') {
-            showContent.value = true;
-            await fetchArticleContent();
-          } else {
-            showContent.value = false;
-          }
+          showContent.value = preferredMode === 'rendered';
         }
       }
     }

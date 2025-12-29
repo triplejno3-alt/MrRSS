@@ -1,0 +1,313 @@
+package chat
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"MrRSS/internal/handlers/core"
+	"MrRSS/internal/utils"
+)
+
+// CreateSessionRequest represents the request to create a new chat session
+type CreateSessionRequest struct {
+	ArticleID int64  `json:"article_id"`
+	Title     string `json:"title"`
+}
+
+// UpdateSessionRequest represents the request to update a chat session
+type UpdateSessionRequest struct {
+	Title string `json:"title"`
+}
+
+// HandleListSessions handles GET requests to list all chat sessions for an article
+func HandleListSessions(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get article_id from query parameter
+	articleIDStr := r.URL.Query().Get("article_id")
+	if articleIDStr == "" {
+		http.Error(w, "Missing article_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	articleID, err := strconv.ParseInt(articleIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid article_id", http.StatusBadRequest)
+		return
+	}
+
+	sessions, err := h.DB.GetChatSessionsByArticle(articleID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get sessions: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sessions)
+}
+
+// HandleCreateSession handles POST requests to create a new chat session
+func HandleCreateSession(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req CreateSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.ArticleID == 0 {
+		http.Error(w, "Missing article_id", http.StatusBadRequest)
+		return
+	}
+
+	// Generate default title if not provided
+	title := req.Title
+	if title == "" {
+		title = "New Chat"
+	}
+
+	sessionID, err := h.DB.CreateChatSession(req.ArticleID, title)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get the created session
+	session, err := h.DB.GetChatSession(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get created session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
+}
+
+// HandleGetSession handles GET requests to retrieve a specific chat session
+func HandleGetSession(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get session_id from query parameter
+	sessionIDStr := r.URL.Query().Get("session_id")
+	if sessionIDStr == "" {
+		http.Error(w, "Missing session_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid session_id", http.StatusBadRequest)
+		return
+	}
+
+	session, err := h.DB.GetChatSession(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if session == nil {
+		http.Error(w, "Session not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
+}
+
+// HandleUpdateSession handles PUT requests to update a chat session
+func HandleUpdateSession(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get session_id from query parameter
+	sessionIDStr := r.URL.Query().Get("session_id")
+	if sessionIDStr == "" {
+		http.Error(w, "Missing session_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid session_id", http.StatusBadRequest)
+		return
+	}
+
+	var req UpdateSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Title == "" {
+		http.Error(w, "Missing title", http.StatusBadRequest)
+		return
+	}
+
+	err = h.DB.UpdateChatSessionTitle(sessionID, req.Title)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get the updated session
+	session, err := h.DB.GetChatSession(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get updated session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
+}
+
+// HandleDeleteSession handles DELETE requests to delete a chat session
+func HandleDeleteSession(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get session_id from query parameter
+	sessionIDStr := r.URL.Query().Get("session_id")
+	if sessionIDStr == "" {
+		http.Error(w, "Missing session_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid session_id", http.StatusBadRequest)
+		return
+	}
+
+	err = h.DB.DeleteChatSession(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
+}
+
+// HandleListMessages handles GET requests to list all messages in a session
+func HandleListMessages(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get session_id from query parameter
+	sessionIDStr := r.URL.Query().Get("session_id")
+	if sessionIDStr == "" {
+		http.Error(w, "Missing session_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid session_id", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.DB.GetChatMessages(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get messages: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert markdown to HTML for assistant messages
+	type MessageWithHTML struct {
+		ID        int64  `json:"id"`
+		SessionID int64  `json:"session_id"`
+		Role      string `json:"role"`
+		Content   string `json:"content"`
+		HTML      string `json:"html,omitempty"` // Pre-rendered HTML for assistant messages
+		Thinking  string `json:"thinking,omitempty"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	result := make([]MessageWithHTML, len(messages))
+	for i, msg := range messages {
+		result[i] = MessageWithHTML{
+			ID:        msg.ID,
+			SessionID: msg.SessionID,
+			Role:      msg.Role,
+			Content:   msg.Content,
+			Thinking:  msg.Thinking,
+			CreatedAt: msg.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+		// Generate HTML for assistant messages
+		if msg.Role == "assistant" {
+			result[i].HTML = utils.ConvertMarkdownToHTML(msg.Content)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+// HandleDeleteMessage handles DELETE requests to delete a specific message
+func HandleDeleteMessage(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get message_id from query parameter
+	messageIDStr := r.URL.Query().Get("message_id")
+	if messageIDStr == "" {
+		http.Error(w, "Missing message_id parameter", http.StatusBadRequest)
+		return
+	}
+
+	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid message_id", http.StatusBadRequest)
+		return
+	}
+
+	err = h.DB.DeleteChatMessage(messageID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete message: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
+}
+
+// HandleDeleteAllSessions handles DELETE requests to delete all chat sessions
+func HandleDeleteAllSessions(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	count, err := h.DB.DeleteAllChatSessions()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete all sessions: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "deleted",
+		"count":  count,
+	})
+}

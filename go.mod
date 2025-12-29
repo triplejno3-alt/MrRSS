@@ -12,6 +12,7 @@ require (
 	github.com/antchfx/xmlquery v1.5.0
 	github.com/chromedp/chromedp v0.14.2
 	github.com/go-ego/gse v1.0.0
+	github.com/gomarkdown/markdown v0.0.0-20250810172220-2e2c11897d1a
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.48
 	golang.org/x/crypto v0.46.0

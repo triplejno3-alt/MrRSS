@@ -37,6 +37,7 @@ const (
 // SummaryResult contains the generated summary and metadata
 type SummaryResult struct {
 	Summary       string `json:"summary"`
+	Thinking      string `json:"thinking,omitempty"` // AI thinking process (optional)
 	SentenceCount int    `json:"sentence_count"`
 	IsTooShort    bool   `json:"is_too_short"`
 }

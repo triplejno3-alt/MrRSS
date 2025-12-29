@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useModalClose } from '@/composables/ui/useModalClose';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface Props {
   title?: string;
@@ -11,10 +14,14 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   title: 'Confirm',
-  confirmText: 'Confirm',
-  cancelText: 'Cancel',
+  confirmText: undefined,
+  cancelText: undefined,
   isDanger: false,
 });
+
+// Use i18n translations if not provided
+const getConfirmText = (customText?: string) => customText || t('confirm');
+const getCancelText = (customText?: string) => customText || t('cancel');
 
 const emit = defineEmits<{
   confirm: [];
@@ -58,13 +65,13 @@ function handleCancel() {
         class="p-3 sm:p-5 border-t border-border bg-bg-secondary flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3"
       >
         <button class="btn-secondary text-sm sm:text-base" @click="handleCancel">
-          {{ cancelText }}
+          {{ getCancelText(cancelText) }}
         </button>
         <button
           :class="[isDanger ? 'btn-danger' : 'btn-primary', 'text-sm sm:text-base']"
           @click="handleConfirm"
         >
-          {{ confirmText }}
+          {{ getConfirmText(confirmText) }}
         </button>
       </div>
     </div>

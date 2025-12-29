@@ -1,12 +1,34 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PhChatCircleText, PhX, PhPaperPlaneRight, PhSpinner } from '@phosphor-icons/vue';
+import {
+  PhChatCircleText,
+  PhX,
+  PhPaperPlaneRight,
+  PhSpinner,
+  PhClockCounterClockwise,
+  PhPlus,
+  PhTrash,
+  PhPencil,
+} from '@phosphor-icons/vue';
 import type { Article } from '@/types/models';
 
 interface ChatMessage {
+  id: number;
   role: 'user' | 'assistant';
   content: string;
+  html?: string; // Pre-rendered HTML from backend
+  thinking?: string;
+  created_at: string;
+}
+
+interface ChatSession {
+  id: number;
+  article_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
 }
 
 interface Props {
@@ -28,7 +50,12 @@ const isLoading = ref(false);
 const inputMessage = ref('');
 const messages = ref<ChatMessage[]>([]);
 const chatContainer = ref<HTMLElement | null>(null);
-const isFirstMessage = ref(true); // Track if this is the first message in the conversation
+const isFirstMessage = ref(true);
+const currentSessionId = ref<number | null>(null);
+const sessions = ref<ChatSession[]>([]);
+const showSessions = ref(false);
+const editingSessionId = ref<number | null>(null);
+const editingSessionTitle = ref('');
 
 // Resize functionality
 const isResizing = ref(false);
@@ -38,12 +65,130 @@ const startWidth = ref(0);
 const startHeight = ref(0);
 const panelElement = ref<HTMLElement | null>(null);
 
+// Initialize: load sessions for this article
+onMounted(async () => {
+  await loadSessions();
+  // Auto-select the most recent session if available
+  if (sessions.value.length > 0) {
+    await selectSession(sessions.value[0].id);
+  }
+});
+
+async function loadSessions() {
+  try {
+    const response = await fetch(`/api/ai/chat/sessions?article_id=${props.article.id}`);
+    if (response.ok) {
+      sessions.value = await response.json();
+    }
+  } catch (e) {
+    console.error('Failed to load sessions:', e);
+  }
+}
+
+async function selectSession(sessionId: number) {
+  try {
+    const response = await fetch(`/api/ai/chat/messages?session_id=${sessionId}`);
+    if (response.ok) {
+      const loadedMessages = await response.json();
+      messages.value = loadedMessages;
+      currentSessionId.value = sessionId;
+      // Set isFirstMessage based on whether the session has any messages
+      // New sessions (no messages) should have isFirstMessage = true
+      isFirstMessage.value = loadedMessages.length === 0;
+      showSessions.value = false;
+      await nextTick();
+      scrollToBottom();
+    }
+  } catch (e) {
+    console.error('Failed to load session messages:', e);
+  }
+}
+
+async function createNewSession() {
+  try {
+    const response = await fetch('/api/ai/chat/session/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        article_id: props.article.id,
+        title: t('newChat'),
+      }),
+    });
+
+    if (response.ok) {
+      const newSession = await response.json();
+      sessions.value.unshift(newSession);
+      // Select the new session and reset for first message
+      await selectSession(newSession.id);
+      // Ensure isFirstMessage is true for new sessions
+      isFirstMessage.value = true;
+    }
+  } catch (e) {
+    console.error('Failed to create session:', e);
+  }
+}
+
+async function deleteSession(sessionId: number, e: Event) {
+  e.stopPropagation();
+  const confirmed = await window.showConfirm({
+    title: t('confirm'),
+    message: t('confirmDeleteSession'),
+    isDanger: true,
+  });
+  if (!confirmed) return;
+
+  try {
+    await fetch(`/api/ai/chat/session?session_id=${sessionId}`, {
+      method: 'DELETE',
+    });
+
+    sessions.value = sessions.value.filter((s) => s.id !== sessionId);
+    if (currentSessionId.value === sessionId) {
+      currentSessionId.value = null;
+      messages.value = [];
+      if (sessions.value.length > 0) {
+        await selectSession(sessions.value[0].id);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to delete session:', e);
+  }
+}
+
+function startEditSession(session: ChatSession, e: Event) {
+  e.stopPropagation();
+  editingSessionId.value = session.id;
+  editingSessionTitle.value = session.title;
+}
+
+async function saveSessionTitle(sessionId: number) {
+  try {
+    await fetch(`/api/ai/chat/session?session_id=${sessionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: editingSessionTitle.value }),
+    });
+
+    const session = sessions.value.find((s) => s.id === sessionId);
+    if (session) {
+      session.title = editingSessionTitle.value;
+    }
+    editingSessionId.value = null;
+  } catch (e) {
+    console.error('Failed to update session title:', e);
+  }
+}
+
+function cancelEditSession() {
+  editingSessionId.value = null;
+  editingSessionTitle.value = '';
+}
+
 function startResize(e: MouseEvent) {
   isResizing.value = true;
   startX.value = e.clientX;
   startY.value = e.clientY;
 
-  // Get the chat panel element
   const panel = panelElement.value;
   if (panel) {
     const rect = panel.getBoundingClientRect();
@@ -68,8 +213,7 @@ function resize(e: MouseEvent) {
 
   const panel = panelElement.value;
   if (panel) {
-    // Remove Tailwind width/height classes and set custom size
-    panel.classList.remove('w-96', 'h-96', 'w-[calc(100%-2rem)]', 'md:w-96');
+    panel.classList.remove('w-[500px]', 'h-[600px]', 'w-[calc(100%-2rem)]', 'md:w-96');
     panel.style.width = `${newWidth}px`;
     panel.style.height = `${newHeight}px`;
     panel.style.maxWidth = 'none';
@@ -87,27 +231,33 @@ async function sendMessage() {
   const message = inputMessage.value.trim();
   if (!message || isLoading.value) return;
 
-  // Add user message
-  messages.value.push({ role: 'user', content: message });
+  messages.value.push({
+    id: 0,
+    role: 'user',
+    content: message,
+    created_at: new Date().toISOString(),
+  });
   inputMessage.value = '';
   isLoading.value = true;
 
-  // Scroll to bottom
   await nextTick();
   scrollToBottom();
 
   try {
-    const requestBody: any = {
-      messages: messages.value.slice(-10), // Keep last 10 messages for context
-      is_first_message: isFirstMessage.value,
-    };
+    // Prepare article content for AI context
+    // Use up to 50000 characters for better context while staying reasonable
+    const articleContent = props.articleContent ? props.articleContent.slice(0, 50000) : '';
 
-    // Only include article content for the first message
-    if (isFirstMessage.value) {
-      requestBody.article_title = props.article.title;
-      requestBody.article_url = props.article.url;
-      requestBody.article_content = props.articleContent.slice(0, 10000);
-    }
+    const requestBody: any = {
+      session_id: currentSessionId.value,
+      article_id: props.article.id,
+      messages: messages.value.slice(-10),
+      is_first_message: isFirstMessage.value,
+      article_title: props.article.title,
+      article_url: props.article.url,
+      // Include article content to ensure AI has context
+      article_content: articleContent,
+    };
 
     const response = await fetch('/api/ai-chat', {
       method: 'POST',
@@ -117,31 +267,48 @@ async function sendMessage() {
 
     if (response.ok) {
       const data = await response.json();
-      messages.value.push({ role: 'assistant', content: data.response });
-      isFirstMessage.value = false; // Mark that we've sent the first message
+      messages.value.push({
+        id: 0,
+        role: 'assistant',
+        content: data.response,
+        html: data.html, // Use pre-rendered HTML from backend
+        thinking: data.thinking,
+        created_at: new Date().toISOString(),
+      });
+
+      if (data.session_id && data.session_id !== currentSessionId.value) {
+        currentSessionId.value = data.session_id;
+        await loadSessions();
+      }
+
+      isFirstMessage.value = false;
     } else {
-      // Get error text from response
       const errorText = await response.text();
       console.error('AI chat error response:', response.status, errorText);
 
-      // Try to parse as JSON first
       let errorMessage = t('aiChatError');
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.error || errorData || t('aiChatError');
       } catch {
-        // If not JSON, use the raw text
         errorMessage = errorText || t('aiChatError');
       }
 
       messages.value.push({
+        id: 0,
         role: 'assistant',
         content: errorMessage,
+        created_at: new Date().toISOString(),
       });
     }
   } catch (e) {
     console.error('AI chat error:', e);
-    messages.value.push({ role: 'assistant', content: t('aiChatError') });
+    messages.value.push({
+      id: 0,
+      role: 'assistant',
+      content: t('aiChatError'),
+      created_at: new Date().toISOString(),
+    });
   } finally {
     isLoading.value = false;
     await nextTick();
@@ -161,6 +328,14 @@ function handleKeydown(e: KeyboardEvent) {
     sendMessage();
   }
 }
+
+const currentSessionTitle = computed(() => {
+  if (currentSessionId.value) {
+    const session = sessions.value.find((s) => s.id === currentSessionId.value);
+    return session?.title || t('aiChat');
+  }
+  return t('aiChat');
+});
 </script>
 
 <template>
@@ -169,24 +344,40 @@ function handleKeydown(e: KeyboardEvent) {
       <div
         v-if="isOpen"
         ref="panelElement"
-        class="chat-panel fixed bottom-4 right-4 md:bottom-6 md:right-6 w-96 h-96 bg-bg-primary border border-border rounded-xl shadow-2xl flex flex-col z-50"
+        class="chat-panel fixed bottom-4 right-4 md:bottom-6 md:right-6 w-[500px] h-[600px] bg-bg-primary border border-border rounded-xl shadow-2xl flex flex-col z-50"
         :class="{ 'select-none': isResizing }"
       >
         <!-- Header -->
         <div
           class="flex items-center justify-between p-3 border-b border-border bg-bg-secondary rounded-t-xl relative"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-1">
             <PhChatCircleText :size="20" class="text-accent" />
-            <span class="font-medium text-sm">{{ t('aiChat') }}</span>
+            <button
+              class="flex items-center gap-1 text-sm font-medium hover:text-accent transition-colors"
+              :title="t('switchSession')"
+              @click="showSessions = !showSessions"
+            >
+              <span>{{ currentSessionTitle }}</span>
+              <PhClockCounterClockwise :size="16" />
+            </button>
           </div>
-          <button
-            class="p-1 hover:bg-bg-tertiary rounded-lg transition-colors"
-            :title="t('close')"
-            @click="emit('close')"
-          >
-            <PhX :size="18" class="text-text-secondary" />
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              class="p-1 hover:bg-bg-tertiary rounded-lg transition-colors"
+              :title="t('newChat')"
+              @click="createNewSession"
+            >
+              <PhPlus :size="18" class="text-text-secondary" />
+            </button>
+            <button
+              class="p-1 hover:bg-bg-tertiary rounded-lg transition-colors"
+              :title="t('close')"
+              @click="emit('close')"
+            >
+              <PhX :size="18" class="text-text-secondary" />
+            </button>
+          </div>
 
           <!-- Resize handle -->
           <div
@@ -197,6 +388,62 @@ function handleKeydown(e: KeyboardEvent) {
             <div class="w-full h-full bg-accent rounded-full border border-white shadow-sm"></div>
           </div>
         </div>
+
+        <!-- Session List Sidebar -->
+        <Transition name="slide-in">
+          <div
+            v-if="showSessions"
+            class="absolute top-12 left-0 right-0 bottom-12 bg-bg-secondary border-b border-border rounded-b-xl overflow-y-auto"
+          >
+            <div class="p-2 space-y-1">
+              <div
+                v-for="session in sessions"
+                :key="session.id"
+                class="flex items-center gap-2 p-2 rounded-lg hover:bg-bg-tertiary cursor-pointer group"
+                :class="{ 'bg-bg-tertiary': session.id === currentSessionId }"
+                @click="selectSession(session.id)"
+              >
+                <PhChatCircleText :size="16" class="text-text-secondary" />
+                <div v-if="editingSessionId === session.id" class="flex-1 flex items-center gap-1">
+                  <input
+                    v-model="editingSessionTitle"
+                    class="flex-1 px-2 py-1 text-sm bg-bg-primary border border-border rounded focus:outline-none focus:border-accent"
+                    @keyup.enter="saveSessionTitle(session.id)"
+                    @keyup.esc="cancelEditSession"
+                    @click.stop
+                  />
+                  <button
+                    class="p-1 hover:bg-bg-primary rounded"
+                    @click="saveSessionTitle(session.id)"
+                  >
+                    <PhPaperPlaneRight :size="14" />
+                  </button>
+                </div>
+                <span v-else class="flex-1 text-sm truncate">{{ session.title }}</span>
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                  <button
+                    class="p-1 hover:bg-bg-primary rounded"
+                    @click="startEditSession(session, $event)"
+                  >
+                    <PhPencil :size="14" />
+                  </button>
+                  <button
+                    class="p-1 hover:bg-bg-primary rounded text-red-500"
+                    @click="deleteSession(session.id, $event)"
+                  >
+                    <PhTrash :size="14" />
+                  </button>
+                </div>
+              </div>
+              <div
+                v-if="sessions.length === 0"
+                class="text-center text-text-secondary text-sm py-4"
+              >
+                {{ t('noSessions') }}
+              </div>
+            </div>
+          </div>
+        </Transition>
 
         <!-- Messages -->
         <div ref="chatContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
@@ -218,7 +465,25 @@ function handleKeydown(e: KeyboardEvent) {
                 msg.role === 'user' ? 'bg-accent text-white' : 'bg-bg-secondary text-text-primary'
               "
             >
-              <div class="whitespace-pre-wrap break-words">{{ msg.content }}</div>
+              <!-- Thinking section -->
+              <div
+                v-if="msg.thinking"
+                class="mb-2 p-2 bg-bg-tertiary border-l-2 border-accent rounded text-xs text-text-secondary"
+              >
+                <div class="font-bold mb-1 flex items-center gap-1">
+                  <PhSpinner :size="12" class="animate-spin" />
+                  {{ t('thinking') }}
+                </div>
+                <div class="whitespace-pre-wrap">{{ msg.thinking }}</div>
+              </div>
+              <!-- Message content with pre-rendered HTML from backend -->
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <div
+                v-if="msg.role === 'assistant'"
+                class="prose prose-sm max-w-none"
+                v-html="msg.html || msg.content"
+              ></div>
+              <div v-else class="whitespace-pre-wrap break-words">{{ msg.content }}</div>
             </div>
           </div>
           <div v-if="isLoading" class="flex justify-start">
@@ -254,7 +519,6 @@ function handleKeydown(e: KeyboardEvent) {
 </template>
 
 <style>
-/* Chat panel text selection */
 .chat-panel {
   user-select: text !important;
   -webkit-user-select: text !important;
@@ -269,7 +533,6 @@ function handleKeydown(e: KeyboardEvent) {
   -ms-user-select: none !important;
 }
 
-/* Message content selection */
 .chat-panel .select-text {
   user-select: text !important;
   -webkit-user-select: text !important;
@@ -300,5 +563,45 @@ function handleKeydown(e: KeyboardEvent) {
 .chat-panel-leave-from {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+.slide-in-enter-active,
+.slide-in-leave-active {
+  transition: all 0.2s ease;
+}
+
+.slide-in-enter-from,
+.slide-in-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.slide-in-enter-to,
+.slide-in-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Markdown prose styles */
+.prose {
+  color: inherit;
+}
+
+.prose pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.prose code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
 }
 </style>

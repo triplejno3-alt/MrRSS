@@ -246,6 +246,27 @@ func initSchema(db *sql.DB) error {
 		FOREIGN KEY(article_id) REFERENCES articles(id) ON DELETE CASCADE
 	);
 
+	-- Chat sessions table to store AI chat conversations per article
+	CREATE TABLE IF NOT EXISTS chat_sessions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		article_id INTEGER NOT NULL,
+		title TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(article_id) REFERENCES articles(id) ON DELETE CASCADE
+	);
+
+	-- Chat messages table to store individual messages in chat sessions
+	CREATE TABLE IF NOT EXISTS chat_messages (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		session_id INTEGER NOT NULL,
+		role TEXT NOT NULL,
+		content TEXT NOT NULL,
+		thinking TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+	);
+
 	-- Create indexes for better query performance
 	CREATE INDEX IF NOT EXISTS idx_articles_feed_id ON articles(feed_id);
 	CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);
@@ -266,6 +287,11 @@ func initSchema(db *sql.DB) error {
 
 	-- Article content cache index
 	CREATE INDEX IF NOT EXISTS idx_article_contents_article_id ON article_contents(article_id);
+
+	-- Chat sessions and messages indexes
+	CREATE INDEX IF NOT EXISTS idx_chat_sessions_article_id ON chat_sessions(article_id);
+	CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated_at ON chat_sessions(updated_at DESC);
+	CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
 	`
 	_, err := db.Exec(query)
 	if err != nil {
@@ -324,6 +350,28 @@ func runMigrations(db *sql.DB) error {
 		FOREIGN KEY(article_id) REFERENCES articles(id) ON DELETE CASCADE
 	)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_article_contents_article_id ON article_contents(article_id)`)
+
+	// Migration: Add chat_sessions and chat_messages tables for AI chat feature
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS chat_sessions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		article_id INTEGER NOT NULL,
+		title TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(article_id) REFERENCES articles(id) ON DELETE CASCADE
+	)`)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS chat_messages (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		session_id INTEGER NOT NULL,
+		role TEXT NOT NULL,
+		content TEXT NOT NULL,
+		thinking TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+	)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_chat_sessions_article_id ON chat_sessions(article_id)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated_at ON chat_sessions(updated_at DESC)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id)`)
 
 	return nil
 }

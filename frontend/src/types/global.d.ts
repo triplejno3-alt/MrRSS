@@ -25,6 +25,11 @@ declare global {
     showInput: (InputDialogOptions) => Promise<string | null>;
     showToast: (string, ToastType?, number?) => void;
   }
+
+  // Browser APIs
+  const confirm: (message: string) => boolean;
+  const alert: (message: string) => void;
+  const prompt: (message: string, defaultValue?: string) => string | null;
 }
 
 export {};

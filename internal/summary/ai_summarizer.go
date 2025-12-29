@@ -150,29 +150,31 @@ func (s *AISummarizer) Summarize(text string, length SummaryLength) (SummaryResu
 	// Use custom system prompt if provided, otherwise use default
 	systemPrompt := s.SystemPrompt
 	if systemPrompt == "" {
-		systemPrompt = "You are a summarizer. Generate a concise summary of the given text. Output ONLY the summary, nothing else."
+		systemPrompt = "You are a helpful AI assistant that creates clear, well-formatted summaries. When listing items, features, or points, prefer using bullet points or numbered lists to organize the content. Make the summary scannable and easy to read."
 	}
 	userPrompt := fmt.Sprintf("Summarize the following text in approximately %d words:\n\n%s", targetWords, cleanedText)
 
 	// Try OpenAI format first
-	result, err := s.tryOpenAIFormat(systemPrompt, userPrompt)
+	result, thinking, err := s.tryOpenAIFormat(systemPrompt, userPrompt)
 	if err == nil {
 		// Count sentences in the summary
 		sentences := splitSentences(result)
 		return SummaryResult{
 			Summary:       result,
+			Thinking:      thinking,
 			SentenceCount: len(sentences),
 			IsTooShort:    false,
 		}, nil
 	}
 
 	// If OpenAI format fails, try Ollama format
-	result, err = s.tryOllamaFormat(systemPrompt, userPrompt)
+	result, thinking, err = s.tryOllamaFormat(systemPrompt, userPrompt)
 	if err == nil {
 		// Count sentences in the summary
 		sentences := splitSentences(result)
 		return SummaryResult{
 			Summary:       result,
+			Thinking:      thinking,
 			SentenceCount: len(sentences),
 			IsTooShort:    false,
 		}, nil
@@ -183,7 +185,7 @@ func (s *AISummarizer) Summarize(text string, length SummaryLength) (SummaryResu
 }
 
 // tryOpenAIFormat attempts to use OpenAI-compatible API format
-func (s *AISummarizer) tryOpenAIFormat(systemPrompt, userPrompt string) (string, error) {
+func (s *AISummarizer) tryOpenAIFormat(systemPrompt, userPrompt string) (string, string, error) {
 	requestBody := map[string]interface{}{
 		"model": s.Model,
 		"messages": []map[string]string{
@@ -195,17 +197,17 @@ func (s *AISummarizer) tryOpenAIFormat(systemPrompt, userPrompt string) (string,
 
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal OpenAI request: %w", err)
+		return "", "", fmt.Errorf("failed to marshal OpenAI request: %w", err)
 	}
 
 	resp, err := s.sendRequest(jsonBody)
 	if err != nil {
-		return "", fmt.Errorf("OpenAI request failed: %w", err)
+		return "", "", fmt.Errorf("OpenAI request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("OpenAI API returned status: %d", resp.StatusCode)
+		return "", "", fmt.Errorf("OpenAI API returned status: %d", resp.StatusCode)
 	}
 
 	var result struct {
@@ -217,20 +219,22 @@ func (s *AISummarizer) tryOpenAIFormat(systemPrompt, userPrompt string) (string,
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode OpenAI response: %w", err)
+		return "", "", fmt.Errorf("failed to decode OpenAI response: %w", err)
 	}
 
 	if len(result.Choices) > 0 && result.Choices[0].Message.Content != "" {
-		// Clean up the response
-		summary := strings.TrimSpace(result.Choices[0].Message.Content)
-		return summary, nil
+		// Clean up the response and extract thinking
+		content := strings.TrimSpace(result.Choices[0].Message.Content)
+		thinking := extractThinking(content)
+		summary := removeThinkingTags(content)
+		return summary, thinking, nil
 	}
 
-	return "", fmt.Errorf("no summary found in OpenAI response")
+	return "", "", fmt.Errorf("no summary found in OpenAI response")
 }
 
 // tryOllamaFormat attempts to use Ollama API format
-func (s *AISummarizer) tryOllamaFormat(systemPrompt, userPrompt string) (string, error) {
+func (s *AISummarizer) tryOllamaFormat(systemPrompt, userPrompt string) (string, string, error) {
 	// Combine system and user prompts for Ollama
 	fullPrompt := systemPrompt + "\n\n" + userPrompt
 
@@ -242,17 +246,17 @@ func (s *AISummarizer) tryOllamaFormat(systemPrompt, userPrompt string) (string,
 
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal Ollama request: %w", err)
+		return "", "", fmt.Errorf("failed to marshal Ollama request: %w", err)
 	}
 
 	resp, err := s.sendRequest(jsonBody)
 	if err != nil {
-		return "", fmt.Errorf("Ollama request failed: %w", err)
+		return "", "", fmt.Errorf("Ollama request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Ollama API returned status: %d", resp.StatusCode)
+		return "", "", fmt.Errorf("Ollama API returned status: %d", resp.StatusCode)
 	}
 
 	var result struct {
@@ -261,16 +265,18 @@ func (s *AISummarizer) tryOllamaFormat(systemPrompt, userPrompt string) (string,
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode Ollama response: %w", err)
+		return "", "", fmt.Errorf("failed to decode Ollama response: %w", err)
 	}
 
 	if result.Done && result.Response != "" {
-		// Clean up the response
-		summary := strings.TrimSpace(result.Response)
-		return summary, nil
+		// Clean up the response and extract thinking
+		content := strings.TrimSpace(result.Response)
+		thinking := extractThinking(content)
+		summary := removeThinkingTags(content)
+		return summary, thinking, nil
 	}
 
-	return "", fmt.Errorf("no summary found in Ollama response")
+	return "", "", fmt.Errorf("no summary found in Ollama response")
 }
 
 // sendRequest sends the HTTP request with proper headers
@@ -332,4 +338,72 @@ func isLocalEndpoint(host string) bool {
 		host == "::1" ||
 		strings.HasPrefix(host, "127.") ||
 		host == "0.0.0.0"
+}
+
+// extractThinking extracts thinking content from <thinking> tags (case-insensitive)
+func extractThinking(content string) string {
+	// Try different case variations of thinking tags
+	tagVariations := []struct {
+		start string
+		end   string
+	}{
+		{"<thinking>", "</thinking>"},
+		{"<THINKING>", "</THINKING>"},
+		{"<Thinking>", "</Thinking>"},
+	}
+
+	for _, tags := range tagVariations {
+		startIndex := strings.Index(content, tags.start)
+		if startIndex == -1 {
+			continue
+		}
+
+		endIndex := strings.Index(content[startIndex:], tags.end)
+		if endIndex == -1 {
+			continue
+		}
+
+		// Extract the content between tags (excluding tags themselves)
+		thinkingStart := startIndex + len(tags.start)
+		thinkingEnd := startIndex + endIndex
+		thinking := strings.TrimSpace(content[thinkingStart:thinkingEnd])
+
+		return thinking
+	}
+
+	return ""
+}
+
+// removeThinkingTags removes <thinking> tags and their content from the response (case-insensitive)
+func removeThinkingTags(content string) string {
+	// Try different case variations of thinking tags
+	tagVariations := []struct {
+		start string
+		end   string
+	}{
+		{"<thinking>", "</thinking>"},
+		{"<THINKING>", "</THINKING>"},
+		{"<Thinking>", "</Thinking>"},
+	}
+
+	result := content
+	for _, tags := range tagVariations {
+		for {
+			startIndex := strings.Index(result, tags.start)
+			if startIndex == -1 {
+				break
+			}
+
+			endIndex := strings.Index(result[startIndex:], tags.end)
+			if endIndex == -1 {
+				break
+			}
+
+			// Remove the entire thinking block including tags
+			thinkingEnd := startIndex + endIndex + len(tags.end)
+			result = result[:startIndex] + result[thinkingEnd:]
+		}
+	}
+
+	return strings.TrimSpace(result)
 }

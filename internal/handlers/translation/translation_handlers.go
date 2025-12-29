@@ -8,6 +8,7 @@ import (
 	"MrRSS/internal/aiusage"
 	"MrRSS/internal/handlers/core"
 	"MrRSS/internal/translation"
+	"MrRSS/internal/utils"
 )
 
 // HandleTranslateArticle translates an article's title.
@@ -176,8 +177,12 @@ func HandleTranslateText(h *core.Handler, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Convert translated markdown to HTML
+	htmlText := utils.ConvertMarkdownToHTML(translatedText)
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"translated_text": translatedText,
+		"html":            htmlText,
 	})
 }
 

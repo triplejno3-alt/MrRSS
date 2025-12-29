@@ -232,6 +232,13 @@ func (db *DB) ClearAllTranslations() error {
 	return err
 }
 
+// ClearAllSummaries clears all summaries from articles.
+func (db *DB) ClearAllSummaries() error {
+	db.WaitForReady()
+	_, err := db.Exec("UPDATE articles SET summary = ''")
+	return err
+}
+
 // ToggleArticleHidden toggles the is_hidden status of an article.
 func (db *DB) ToggleArticleHidden(id int64) error {
 	db.WaitForReady()

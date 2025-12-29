@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"MrRSS/internal/handlers/core"
+	"MrRSS/internal/utils"
 )
 
 // ChatMessage represents a message in the chat conversation
@@ -32,6 +33,7 @@ type ChatRequest struct {
 // ChatResponse represents the response from the AI chat
 type ChatResponse struct {
 	Response string `json:"response"`
+	HTML     string `json:"html,omitempty"` // Rendered HTML version of markdown response
 }
 
 // OpenAIRequest represents the request body for OpenAI-compatible APIs
@@ -114,6 +116,9 @@ func HandleAIChat(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	// Try OpenAI format first
 	response, err := tryOpenAIFormat(endpoint, apiKey, model, optimizedMessages, h)
 	if err == nil {
+		// Convert markdown response to HTML
+		htmlResponse := utils.ConvertMarkdownToHTML(response)
+
 		// Track AI usage (estimate tokens from input and output)
 		estimatedTokens := estimateChatTokens(optimizedMessages, response)
 		if err := h.AITracker.AddUsage(estimatedTokens); err != nil {
@@ -121,7 +126,7 @@ func HandleAIChat(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ChatResponse{Response: response})
+		json.NewEncoder(w).Encode(ChatResponse{Response: response, HTML: htmlResponse})
 		return
 	}
 
@@ -129,6 +134,9 @@ func HandleAIChat(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 	log.Printf("OpenAI format failed, trying Ollama format: %v", err)
 	response, err = tryOllamaFormat(endpoint, apiKey, model, optimizedMessages, h)
 	if err == nil {
+		// Convert markdown response to HTML
+		htmlResponse := utils.ConvertMarkdownToHTML(response)
+
 		// Track AI usage (estimate tokens from input and output)
 		estimatedTokens := estimateChatTokens(optimizedMessages, response)
 		if err := h.AITracker.AddUsage(estimatedTokens); err != nil {
@@ -136,7 +144,7 @@ func HandleAIChat(h *core.Handler, w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ChatResponse{Response: response})
+		json.NewEncoder(w).Encode(ChatResponse{Response: response, HTML: htmlResponse})
 		return
 	}
 
@@ -402,10 +410,10 @@ func optimizeChatContext(messages []ChatMessage, articleTitle, articleURL, artic
 				articleContent = truncateArticleContent(articleContent, maxArticleTokens)
 			}
 
-			systemContent = fmt.Sprintf("You are a helpful AI assistant discussing an article with the user.\n\nArticle Title: %s\nArticle URL: %s\nArticle Content: %s\n\nPlease answer questions about this article. Be concise and helpful. If the user asks about specific parts of the article, you can reference the content above.\n\nIMPORTANT INSTRUCTIONS:\n- Respond in the SAME LANGUAGE as the user's message. If the user writes in Chinese, respond in Chinese. If the user writes in English, respond in English.\n- Output in PLAIN TEXT format only. Do NOT use markdown formatting, bold text (**text**), italic text (*text*), code blocks (```), lists (- item), or any other markdown syntax.\n- Keep your response natural and conversational, but always in plain text.", articleTitle, articleURL, articleContent)
+			systemContent = fmt.Sprintf("You are a helpful AI assistant discussing an article with the user.\n\nArticle Title: %s\nArticle URL: %s\nArticle Content: %s\n\nPlease answer questions about this article. Be concise and helpful.\n\nIMPORTANT:\n- Respond in the SAME LANGUAGE as the user's message.\n- Use markdown formatting for better readability.", articleTitle, articleURL, articleContent)
 		} else {
 			// Subsequent messages: use minimal context
-			systemContent = fmt.Sprintf("You are a helpful AI assistant discussing the article \"%s\".\n\nContinue the conversation about this article. Be concise and helpful.\n\nIMPORTANT INSTRUCTIONS:\n- Respond in the SAME LANGUAGE as the user's message. If the user writes in Chinese, respond in Chinese. If the user writes in English, respond in English.\n- Output in PLAIN TEXT format only. Do NOT use markdown formatting, bold text (**text**), italic text (*text*), code blocks (```), lists (- item), or any other markdown syntax.\n- Keep your response natural and conversational, but always in plain text.", articleTitle)
+			systemContent = fmt.Sprintf("You are a helpful AI assistant discussing the article \"%s\".\n\nContinue the conversation about this article. Be concise and helpful.\n\nIMPORTANT:\n- Respond in the SAME LANGUAGE as the user's message.\n- Use markdown formatting for better readability.", articleTitle)
 		}
 
 		optimized = append(optimized, ChatMessage{
@@ -421,7 +429,7 @@ func optimizeChatContext(messages []ChatMessage, articleTitle, articleURL, artic
 			articleContent = truncateArticleContent(articleContent, maxArticleTokens)
 		}
 
-		systemContent := fmt.Sprintf("You are a helpful AI assistant discussing an article with the user.\n\nArticle Title: %s\nArticle URL: %s\nArticle Content: %s\n\nPlease answer questions about this article. Be concise and helpful.\n\nIMPORTANT INSTRUCTIONS:\n- Respond in the SAME LANGUAGE as the user's message. If the user writes in Chinese, respond in Chinese. If the user writes in English, respond in English.\n- Output in PLAIN TEXT format only. Do NOT use markdown formatting, bold text (**text**), italic text (*text*), code blocks (```), lists (- item), or any other markdown syntax.\n- Keep your response natural and conversational, but always in plain text.", articleTitle, articleURL, articleContent)
+		systemContent := fmt.Sprintf("You are a helpful AI assistant discussing an article with the user.\n\nArticle Title: %s\nArticle URL: %s\nArticle Content: %s\n\nPlease answer questions about this article. Be concise and helpful.\n\nIMPORTANT:\n- Respond in the SAME LANGUAGE as the user's message.\n- Use markdown formatting for better readability.", articleTitle, articleURL, articleContent)
 
 		optimized = append(optimized, ChatMessage{
 			Role:    "system",

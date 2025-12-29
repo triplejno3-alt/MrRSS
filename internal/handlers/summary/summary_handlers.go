@@ -7,6 +7,7 @@ import (
 
 	"MrRSS/internal/handlers/core"
 	"MrRSS/internal/summary"
+	"MrRSS/internal/utils"
 )
 
 // HandleSummarizeArticle generates a summary for an article's content.
@@ -39,6 +40,24 @@ func HandleSummarizeArticle(h *core.Handler, w http.ResponseWriter, r *http.Requ
 	default:
 		http.Error(w, "Invalid length parameter. Use 'short', 'medium', or 'long'", http.StatusBadRequest)
 		return
+	}
+
+	// Check if article already has a cached summary in database
+	// If content is provided (for on-the-fly summarization), skip this check
+	if req.Content == "" {
+		article, err := h.DB.GetArticleByID(req.ArticleID)
+		if err == nil && article.Summary != "" && article.Summary != "<no content>" {
+			// Article has a cached summary, convert it to HTML and return
+			htmlSummary := utils.ConvertMarkdownToHTML(article.Summary)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"summary":        article.Summary,
+				"html":           htmlSummary,
+				"sentence_count": 0, // We don't store this in DB
+				"is_too_short":   false,
+				"cached":         true,
+			})
+			return
+		}
 	}
 
 	// Get the article content
@@ -128,11 +147,16 @@ func HandleSummarizeArticle(h *core.Handler, w http.ResponseWriter, r *http.Requ
 		// Don't fail the request if caching fails
 	}
 
+	// Convert markdown summary to HTML (for all summaries, not just AI)
+	htmlSummary := utils.ConvertMarkdownToHTML(result.Summary)
+
 	response := map[string]interface{}{
 		"summary":        result.Summary,
+		"html":           htmlSummary,
 		"sentence_count": result.SentenceCount,
 		"is_too_short":   result.IsTooShort,
 		"limit_reached":  limitReached,
+		"thinking":       result.Thinking,
 	}
 	if usedFallback {
 		response["used_fallback"] = true
@@ -150,4 +174,21 @@ func getArticleContent(h *core.Handler, articleID int64, providedContent string)
 
 	// Otherwise, fetch from database/cache
 	return h.GetArticleContent(articleID)
+}
+
+// HandleClearSummaries clears all cached summaries from the database.
+func HandleClearSummaries(h *core.Handler, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := h.DB.ClearAllSummaries(); err != nil {
+		log.Printf("Error clearing summaries: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{"success": true})
 }

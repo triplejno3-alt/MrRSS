@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**BREAKING**: The basic system (including feed fetcher, scheduler, and database cleaner) has been re-architected to improve performance and maintainability. The following changes may affect existing setups:
+**BREAKING**: The basic system (including feed fetcher, scheduler, and database cleaner) has been re-architected to improve performance and maintainability. (#350)
+
+The following changes may affect existing setups:
 
 - *Fetching all feeds may not refresh feeds that is not setted as "Using global refresh settings".*
 - *All the article contents are now cached, so enabling "Auto Cleanup" is recommended to avoid excessive database size growth.*
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Supported displaying feeds that are refreshing in progress or waiting to refresh in the feed list.
+- Supported new chat session and viewing chat history in AI Chat feature. (#340)
+- Supported redering chat messages with markdown format in AI Chat feature. (#338)(#346)
 
 ### Changed
 
@@ -31,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the issue where some invalid feeds cause feed refresh to fail. (#341)
 - Fixed the issue where some images in article content rendering mode cannot be displayed correctly. (#327)
 - Fixed the issue where server mode fails to start due to newly added custom CSS file upload feature. (#343)
+- Fixed the issue where popup confirm window cannot be translated correctly.
 
 ## [1.3.11] - 2025-12-26
 
