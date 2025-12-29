@@ -47,9 +47,14 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*Art
 	var articlesWithContent []*ArticleWithContent
 
 	for _, item := range items {
-		published := time.Now()
+		var published time.Time
+		var hasValidPublishedTime bool
 		if item.PublishedParsed != nil {
 			published = *item.PublishedParsed
+			hasValidPublishedTime = true
+		} else {
+			published = time.Now() // Still set for database storage
+			hasValidPublishedTime = false
 		}
 
 		imageURL := extractImageURL(item)
@@ -84,14 +89,15 @@ func (f *Fetcher) processArticles(feed models.Feed, items []*gofeed.Item) []*Art
 		}
 
 		article := &models.Article{
-			FeedID:          feed.ID,
-			Title:           title,
-			URL:             item.Link,
-			ImageURL:        imageURL,
-			AudioURL:        audioURL,
-			VideoURL:        videoURL,
-			PublishedAt:     published,
-			TranslatedTitle: translatedTitle,
+			FeedID:                feed.ID,
+			Title:                 title,
+			URL:                   item.Link,
+			ImageURL:              imageURL,
+			AudioURL:              audioURL,
+			VideoURL:              videoURL,
+			PublishedAt:           published,
+			HasValidPublishedTime: hasValidPublishedTime,
+			TranslatedTitle:       translatedTitle,
 		}
 
 		articlesWithContent = append(articlesWithContent, &ArticleWithContent{

@@ -15,7 +15,7 @@ func (db *DB) SaveArticle(article *models.Article) error {
 	db.WaitForReady()
 
 	// Generate unique_id for deduplication
-	uniqueID := utils.GenerateArticleUniqueID(article.Title, article.FeedID, article.PublishedAt)
+	uniqueID := utils.GenerateArticleUniqueID(article.Title, article.FeedID, article.PublishedAt, article.HasValidPublishedTime)
 	query := `INSERT OR IGNORE INTO articles (feed_id, title, url, image_url, audio_url, video_url, published_at, translated_title, is_read, is_favorite, is_hidden, is_read_later, summary, unique_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := db.Exec(query, article.FeedID, article.Title, article.URL, article.ImageURL, article.AudioURL, article.VideoURL, article.PublishedAt, article.TranslatedTitle, article.IsRead, article.IsFavorite, article.IsHidden, article.IsReadLater, article.Summary, uniqueID)
 	return err
@@ -64,7 +64,7 @@ func (db *DB) SaveArticles(ctx context.Context, articles []*models.Article) erro
 		}
 
 		// Generate unique_id for deduplication
-		uniqueID := utils.GenerateArticleUniqueID(article.Title, article.FeedID, article.PublishedAt)
+		uniqueID := utils.GenerateArticleUniqueID(article.Title, article.FeedID, article.PublishedAt, article.HasValidPublishedTime)
 		_, err := stmt.ExecContext(ctx, article.FeedID, article.Title, article.URL, article.ImageURL, article.AudioURL, article.VideoURL, article.PublishedAt, article.TranslatedTitle, article.IsRead, article.IsFavorite, article.IsHidden, article.IsReadLater, article.Summary, uniqueID)
 		if err != nil {
 			log.Println("Error saving article in batch:", err)
@@ -468,9 +468,9 @@ func (db *DB) UpdateArticleSummary(id int64, summary string) error {
 // GetArticleIDByUniqueID retrieves an article's ID by its unique identifier.
 // This is the preferred method for looking up articles as it uses the title+feed_id+published_date based deduplication.
 // Note: Uses date only (YYYY-MM-DD) rather than full timestamp for better deduplication.
-func (db *DB) GetArticleIDByUniqueID(title string, feedID int64, publishedAt time.Time) (int64, error) {
+func (db *DB) GetArticleIDByUniqueID(title string, feedID int64, publishedAt time.Time, hasValidPublishedTime bool) (int64, error) {
 	db.WaitForReady()
-	uniqueID := utils.GenerateArticleUniqueID(title, feedID, publishedAt)
+	uniqueID := utils.GenerateArticleUniqueID(title, feedID, publishedAt, hasValidPublishedTime)
 	var id int64
 	err := db.QueryRow("SELECT id FROM articles WHERE unique_id = ?", uniqueID).Scan(&id)
 	if err != nil {

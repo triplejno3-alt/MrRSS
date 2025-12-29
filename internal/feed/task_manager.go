@@ -163,6 +163,15 @@ func (tm *TaskManager) MarkRunning() {
 	}
 }
 
+// MarkCompleted marks the progress as completed
+func (tm *TaskManager) MarkCompleted() {
+	tm.progressMutex.Lock()
+	defer tm.progressMutex.Unlock()
+
+	tm.progress.IsRunning = false
+	log.Println("Progress marked as completed")
+}
+
 // AddToQueueHead adds a task to the queue head (highest priority)
 // Used for: manual add, manual refresh
 func (tm *TaskManager) AddToQueueHead(ctx context.Context, feed models.Feed, reason TaskReason) {

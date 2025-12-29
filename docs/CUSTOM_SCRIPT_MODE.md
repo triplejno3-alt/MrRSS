@@ -2,6 +2,48 @@
 
 MrRSS supports custom scripts that can be used to fetch RSS feeds from sources that don't provide standard RSS/Atom feeds.
 
+## Using AI to Write Crawler Scripts
+
+If you're not familiar with programming, you can use AI tools (like ChatGPT, Claude, etc.) to help you write crawler scripts. Below is a simple guide and prompt template.
+
+### How to Use
+
+1. Copy the prompt below into an AI tool
+2. Replace `{webpage URL}` with the actual webpage URL you want to crawl
+3. Replace `{website name}` with the target website's name
+4. Have the AI generate the script code
+5. Save the generated script as a `.py` file in the `scripts` folder
+
+### AI Prompt Template
+
+```plaintext
+Please write a Python script for me to crawl webpage content and convert it to RSS XML format.
+
+Target website: {website name}
+Webpage URL: {webpage URL}
+
+Script requirements:
+
+1. Write in Python, import necessary libraries (such as requests, beautifulsoup4, etc.)
+2. Accept URL as command line argument (if needed)
+3. Fetch webpage content and parse HTML
+4. Extract article list, including title, link, publication date, summary, etc.
+5. Output standard RSS 2.0 XML format to stdout
+6. Handle possible encoding issues, ensure output is UTF-8 encoded
+7. Add appropriate error handling
+
+Please provide complete, runnable code example.
+```
+
+### Notes
+
+- The generated script needs to meet MrRSS script requirements (see below)
+- Ensure the script outputs valid RSS XML format
+- Test if the script runs properly in your environment
+- Respect the website's robots.txt and terms of use
+
+---
+
 ## How It Works
 
 1. Place your scripts in the `scripts` folder inside the MrRSS data directory
@@ -34,7 +76,7 @@ Your script must output valid RSS or Atom XML to stdout. The output should follo
 ## Supported Script Types
 
 | Extension | Language | Command Used |
-|-----------|----------|--------------|
+| --------- | -------- | ------------ |
 | `.py` | Python | `python3` (or `python` on Windows) |
 | `.sh` | Shell | `bash` |
 | `.ps1` | PowerShell | `powershell.exe` (Windows) or `pwsh` |

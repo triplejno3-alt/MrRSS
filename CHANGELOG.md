@@ -7,45 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.12] - 2025-12-29
 
-**BREAKING**: The basic system (including feed fetcher, scheduler, and database cleaner) has been re-architected to improve performance and maintainability. (#350)(#366)
+**BREAKING**: The core system (including the feed fetcher, scheduler, and database cleaner) has been re-architected to improve performance and maintainability. (#350, #366)
 
-The following changes may affect existing setups:
+The following changes may affect existing configurations:
 
-- *Fetching all feeds may not refresh feeds that is not setted as "Using global refresh settings".*
-- *All the article contents are now cached, so enabling "Auto Cleanup" is recommended to avoid excessive database size growth.*
-- *Maximum refresh time interval of intelligent refresh scheduling is changed from 3 hours to 24 hours.*
-- *Feed refresh now has 5 seconds timeout. Then a 10 seconds timeout retry is performed.*
+- *Feeds that are not set to "Use global refresh settings" may no longer be refreshed when fetching all feeds.*
+- *All article contents are now cached; enabling "Auto Cleanup" is recommended to prevent excessive database growth.*
+- *The maximum refresh interval for intelligent scheduling has been increased from 3 hours to 24 hours.*
+- *Feed refresh operations now time out after 5 seconds, followed by one retry with a 10-second timeout.*
 
 ### Added
 
-- Supported displaying feeds that are refreshing in progress or waiting to refresh in the feed list.
-- Supported new chat session and viewing chat history in AI Chat feature. (#340)
-- Supported redering chat messages with markdown format in AI Chat feature. (#338)(#346)
-- Supported searching inside article content. (#361)
+- Added visual indicators for feeds that are currently refreshing or queued to refresh in the feed list.
+- Added support for creating new chat sessions and viewing chat history in the AI Chat feature. (#340)
+- Added support for rendering chat messages in Markdown format in the AI Chat feature. (#338, #346)
+- Added the ability to search within article content. (#361)
 
 ### Changed
 
-- Offer users a setting to enable or disable auto installation of updates after download. (#336)
-- Shortcuts can now be enabled or disabled via settings.
-- All article contents are now cached to improve loading speed when switching articles. (#344)
-- Error messages when adding/editing feeds in XPath mode are now more user-friendly. (#345)(#364)
+- Added a user setting to enable or disable automatic installation of updates after download. (#336)
+- Keyboard shortcuts can now be enabled or disabled via settings.
+- All article contents are now cached to improve loading speed when switching between articles. (#344)
+- Improved error messages when adding or editing feeds in XPath mode for better user experience. (#345, #364)
 
 ### Fixed
 
-- Fixed the issue where macOS privacy permission dialog appears repeatedly when opening articles. (#337)
-- Fixed the issue where GPU occupation is high when opening settings page. (#339)
-- Fixed the issue where some invalid feeds cause feed refresh to fail. (#341)
-- Fixed the issue where some images in article content rendering mode cannot be displayed correctly. (#327)
-- Fixed the issue where server mode fails to start due to newly added custom CSS file upload feature. (#343)
-- Fixed the issue where popup confirm window cannot be translated correctly.
-- Fixed the issue where shorcuts conflict when settings page is opened. (#355)
-- Fixed the issue where clicking mark all as read button in article list does not work correctly. (#318)(#353)(#363)
-- Fixed the issue where opening an article makes it disappear from article list when filter is applied. (#318)(#353)(#362)
-- Fixed the issue where application name is displayed as `{{.info.ProductName}}` on Windows platform. (#351)
-- Fixed the issue where moving a feed removes advanced setting for that feed. (#356)
-- Fixed the issue where switching articles before summary generation completes causes incorrect summary display. (#365)
-- Fixed the issue where error messages when DATETIME is NULL. (#347)
-- Fixed the issue where clicking on blanke spaces can not cancel selected text in articles. (#360)
+- Fixed repeated macOS privacy permission dialogs when opening articles. (#337)
+- Fixed high GPU usage when opening the settings page. (#339)
+- Fixed feed refresh failures caused by certain invalid feeds. (#341)
+- Fixed incorrect rendering of some images in article content. (#327)
+- Fixed server startup failure due to the newly added custom CSS file upload feature. (#343)
+- Fixed translation issues in confirmation pop-up windows.
+- Fixed keyboard shortcut conflicts when the settings page is open. (#355)
+- Fixed the "Mark all as read" button in the article list not working correctly. (#318, #353, #363)
+- Fixed articles disappearing from the article list when opened while a filter is applied. (#318, #353, #362)
+- Fixed incorrect application name display (`{{.info.ProductName}}`) on Windows. (#351)
+- Fixed removal of advanced settings when moving a feed. (#356)
+- Fixed incorrect summary display when switching articles before summary generation completes. (#365)
+- Fixed error messages caused by NULL DATETIME values. (#347)
+- Fixed inability to cancel text selection by clicking on blank areas in articles. (#360)
 
 ## [1.3.11] - 2025-12-26
 

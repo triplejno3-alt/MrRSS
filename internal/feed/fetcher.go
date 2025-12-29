@@ -208,6 +208,8 @@ func (f *Fetcher) FetchAll(ctx context.Context) {
 
 	if len(feeds) == 0 {
 		log.Println("No feeds to refresh")
+		// Mark progress as completed since there's nothing to do
+		f.taskManager.MarkCompleted()
 		return
 	}
 
@@ -428,7 +430,7 @@ func (f *Fetcher) cacheArticleContents(articlesWithContent []*ArticleWithContent
 		}
 
 		// Get article ID by unique_id (article was just saved, so it should exist)
-		articleID, err := f.db.GetArticleIDByUniqueID(awc.Article.Title, awc.Article.FeedID, awc.Article.PublishedAt)
+		articleID, err := f.db.GetArticleIDByUniqueID(awc.Article.Title, awc.Article.FeedID, awc.Article.PublishedAt, awc.Article.HasValidPublishedTime)
 		if err != nil {
 			// Article might not exist yet (race condition) or other error
 			utils.DebugLog("Could not find article ID for %s: %v", awc.Article.Title, err)

@@ -37,20 +37,21 @@ type Feed struct {
 }
 
 type Article struct {
-	ID              int64     `json:"id"`
-	FeedID          int64     `json:"feed_id"`
-	Title           string    `json:"title"`
-	URL             string    `json:"url"`
-	ImageURL        string    `json:"image_url"`
-	AudioURL        string    `json:"audio_url"`
-	VideoURL        string    `json:"video_url"` // YouTube video URL for embedded player
-	PublishedAt     time.Time `json:"published_at"`
-	IsRead          bool      `json:"is_read"`
-	IsFavorite      bool      `json:"is_favorite"`
-	IsHidden        bool      `json:"is_hidden"`
-	IsReadLater     bool      `json:"is_read_later"`
-	FeedTitle       string    `json:"feed_title,omitempty"` // Joined field
-	TranslatedTitle string    `json:"translated_title"`
-	Summary         string    `json:"summary"`   // Cached AI-generated summary
-	UniqueID        string    `json:"unique_id"` // Unique identifier for deduplication (title+feed_id+published_date)
+	ID                    int64     `json:"id"`
+	FeedID                int64     `json:"feed_id"`
+	Title                 string    `json:"title"`
+	URL                   string    `json:"url"`
+	ImageURL              string    `json:"image_url"`
+	AudioURL              string    `json:"audio_url"`
+	VideoURL              string    `json:"video_url"` // YouTube video URL for embedded player
+	PublishedAt           time.Time `json:"published_at"`
+	HasValidPublishedTime bool      `json:"-"` // Internal field, not serialized
+	IsRead                bool      `json:"is_read"`
+	IsFavorite            bool      `json:"is_favorite"`
+	IsHidden              bool      `json:"is_hidden"`
+	IsReadLater           bool      `json:"is_read_later"`
+	FeedTitle             string    `json:"feed_title,omitempty"` // Joined field
+	TranslatedTitle       string    `json:"translated_title"`
+	Summary               string    `json:"summary"`   // Cached AI-generated summary
+	UniqueID              string    `json:"unique_id"` // Unique identifier for deduplication (title+feed_id+published_date)
 }

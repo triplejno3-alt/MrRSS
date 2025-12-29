@@ -237,11 +237,21 @@ func containsMeaningfulWords(key string) bool {
 // This provides better deduplication than URL-based approaches, especially when feeds use tracking parameters
 // or when the same article appears in multiple feeds with different URLs.
 // Note: Uses date only (not full timestamp) to group articles published on the same day.
-func GenerateArticleUniqueID(title string, feedID int64, publishedAt time.Time) string {
+func GenerateArticleUniqueID(title string, feedID int64, publishedAt time.Time, hasValidPublishedTime bool) string {
+	// Trim whitespace from title
+	title = strings.TrimSpace(title)
+
 	// Format: title|feed_id|published_date (YYYY-MM-DD format)
 	// Using date only instead of full timestamp to allow articles published on the same day
 	// with minor time differences to be treated as duplicates
-	data := fmt.Sprintf("%s|%d|%s", title, feedID, publishedAt.Format("2006-01-02"))
+	var dateStr string
+	if hasValidPublishedTime {
+		dateStr = publishedAt.Format("2006-01-02")
+	} else {
+		dateStr = "" // Use empty string if no published date
+	}
+
+	data := fmt.Sprintf("%s|%d|%s", title, feedID, dateStr)
 
 	// Generate MD5 hash and convert to lowercase hex string
 	hash := md5.Sum([]byte(data))
